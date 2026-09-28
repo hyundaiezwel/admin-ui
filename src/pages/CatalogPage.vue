@@ -252,6 +252,17 @@ const tax = ref('과세')
                   <li><code>.ws-btnbox</code> — 원본 btnbox. 하단 버튼줄</li>
                 </ul>
               </div>
+              <div class="ws-msg">
+                <p class="ws-msg__tit">그리드 규칙 — TabGrid</p>
+                <ul>
+                  <li>머리 · 행 35(2단 머리글이면 머리 70). 제목은 가운데, 숫자 값은 오른쪽</li>
+                  <li>체크박스 열은 머리 · 행 모두 가로 · 세로 가운데. 머리 체크박스는 지금 조회 결과 전체 선택</li>
+                  <li>2단 머리글에서 묶음이 아닌 열은 머리 높이 전체의 세로 가운데</li>
+                  <li>한 칸에 여러 값을 줄바꿈으로 넣지 않는다 — 2단 머리글 열로 나눈다</li>
+                  <li>칸 안 버튼 <code>.ws-cellbtn</code> · 링크 <code>.ws-celllink</code>는 행 열기와 겹치지 않는다</li>
+                  <li>쪽을 넘기거나 다시 조회하면 선택이 풀린다. 열이 많으면 열 묶음을 켜고 끈다</li>
+                </ul>
+              </div>
               <table class="ws-tb">
                 <colgroup><col style="width: 140px" /><col /><col style="width: 140px" /><col /></colgroup>
                 <tbody>
