@@ -88,9 +88,10 @@ onMounted(() => {
       : {}),
   })
 
-  // 체크박스 컬럼 클릭은 '선택'이지 '행 열기'가 아니다 — 거터를 눌렀을 때 상세가 뜨면 안 된다
+  // 체크박스 컬럼 클릭은 '선택'이지 '행 열기'가 아니다 — 거터를 눌렀을 때 상세가 뜨면 안 된다.
+  // 칸 안 버튼 · 링크도 제 일을 한다(처리 메뉴 · 상세 이동) — 행 열기가 겹치면 패널이 같이 뜬다
   table.value.on('rowClick', (e: MouseEvent, row: any) => {
-    if ((e.target as HTMLElement | null)?.closest('.sel-col')) return
+    if ((e.target as HTMLElement | null)?.closest('.sel-col, button, a')) return
     emit('rowClick', row.getData())
   })
 })

@@ -174,6 +174,45 @@ export function makeMonthly(row: RemainRow, year: number) {
   })).reverse()
 }
 
+/* --- 참여 기업 관리 ------------------------------------------------------ */
+export type RefundTyp = 'C' | 'P' | 'A'
+export interface CompanyRow extends SpCompany {
+  no: number; applyNo: string; round: number
+  hire: { yn: boolean; hired: number }
+  first: number; added: number; final: number
+  /** 추가 인원 신청이 심사를 기다리는 수 — 0이면 없음 */
+  addReq: number
+  vacct: string; acct: string; acctOk: boolean; bankCopy: boolean; cancelDoc: boolean
+  refund: RefundTyp; due: string; updatedAt: string; sts: string
+  memo: string
+}
+const COMPANY_W: [string, number][] = [
+  ['410', 10], ['510', 14], ['520', 6], ['610', 8], ['611', 30], ['612', 4], ['613', 5], ['614', 6], ['615', 2], ['616', 5],
+  ['590', 3], ['710', 3], ['810', 2], ['830', 2],
+]
+export function makeCompanies(key: string, year: number, n = 780): CompanyRow[] {
+  const r = rng(seedOf('company' + key))
+  return Array.from({ length: n }, (_, i) => {
+    const c = company(r, i + 12000)
+    const sts = weighted(r, COMPANY_W)
+    const first = 3 + Math.floor(r() * r() * 160)
+    const active = sts.startsWith('61')
+    const added = active && r() < 0.35 ? 1 + Math.floor(r() * 15) : 0
+    const addReq = (sts === '613' || sts === '612' || (sts === '610' && r() < 0.5)) ? 1 + Math.floor(r() * 12) : 0
+    const d = day(year, r, 30, 200)
+    const due = new Date(d); due.setDate(due.getDate() + 14)
+    return {
+      ...c, no: n - i, applyNo: `${year}${pad(d.getMonth() + 1, 2)}${pad(d.getDate(), 2)}${pad(1 + Math.floor(r() * 400), 4)}`,
+      round: 1 + Math.floor(r() * r() * 3), hire: ((yn) => ({ yn, hired: yn ? 1 + Math.floor(r() * 4) : 0 }))(r() < 0.2),
+      first, added, final: first + added, addReq,
+      vacct: `391-910-${pad(Math.floor(r() * 999999), 6)}`, acct: `110-${pad(Math.floor(r() * 9999999), 7)}-${pad(Math.floor(r() * 99), 2)}`,
+      acctOk: r() < 0.8, bankCopy: r() < 0.85, cancelDoc: ['590', '710', '810', '830'].includes(sts) && r() < 0.6,
+      refund: weighted(r, [['A', 60], ['C', 30], ['P', 10]]) as RefundTyp, due: ymd(due), updatedAt: ymd(day(year, r, 200, 60)), sts,
+      memo: r() < 0.12 ? pick(r, ['통장사본 재요청', '추가 인원 서류 확인 중', '담당자 변경 예정']) : '',
+    }
+  })
+}
+
 /* --- 메인 배너 --------------------------------------------------------- */
 export interface Banner { id: string; slot: string; order: number; title: string; link: string; from: string; to: string; show: boolean; tint: string }
 export function makeBanners(): Banner[] {

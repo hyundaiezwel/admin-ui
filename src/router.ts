@@ -28,6 +28,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'sp/intake', component: () => import('./pages/sp/IntakePage.vue') },
       { path: 'sp/basic-info', component: () => import('./pages/sp/BasicInfoPage.vue') },
       { path: 'sp/basic-info/:id', component: () => import('./pages/sp/BasicInfoDetailPage.vue') },
+      { path: 'sp/company', component: () => import('./pages/sp/CompanyPage.vue') },
       { path: 'sp/bulk-cancel', component: () => import('./pages/sp/BulkCancelPage.vue') },
       { path: 'sp/scraping', component: () => import('./pages/sp/ScrapingPage.vue') },
       { path: 'sp/scraping/:id', component: () => import('./pages/sp/ScrapingDetailPage.vue') },

@@ -24,7 +24,7 @@ export const SP_MENU: MenuItem[] = [
     children: [
       { id: 'intake', label: '접수·자격심사', to: '/sp/intake', count: 18, asis: ['S-003-02'], built: true },
       { id: 'basic', label: '기초정보 심사', to: '/sp/basic-info', count: 42, asis: ['S-003-04', 'S-003-10'], built: true, note: 'RPA 사본은 라벨만 달랐다(선정완료 → 신청완료, 미체결 → 미제출) — 정본 라벨로 합친다' },
-      { id: 'company', label: '참여 기업 관리', to: p('company'), asis: ['S-003-05', 'S-003-12'], note: '참여개시·인원변경·승인취소·에스크로. RPA 축소판(상태 2종)을 합친다' },
+      { id: 'company', label: '참여 기업 관리', to: '/sp/company', asis: ['S-003-05', 'S-003-12'], built: true, note: '참여개시·인원변경·승인취소·에스크로. RPA 축소판(상태 2종)을 합친다' },
       { id: 'upload', label: '참여 기업 등록', to: p('upload'), asis: ['S-003-14'] },
       { id: 'cancel', label: '일괄 참여 취소', to: '/sp/bulk-cancel', asis: ['S-003-15'], built: true },
     ],
