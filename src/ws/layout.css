@@ -1,0 +1,136 @@
+/* =============================================================================
+ * 화면 블록 — 원본의 `sub_contents` · `pgtbox` · `shbox` · `titbox` · `tbbox` ·
+ * `gvwbox` · `btnbox` · `msgbox`를 옮긴다.
+ *
+ * **간격을 주는 방식만 바꿨다.** 원본은 인접 형제 선택자 48개로 간격을 준다
+ * (`.tbbox + .gvwbox`, `.gvwbox + .titbox` …). 새 블록을 하나 만들 때마다 조합이
+ * 늘어나고, 조합에 없는 순서는 간격이 0이 된다. 값을 뽑아 보면 최상위 블록 사이는
+ * 거의 전부 24px라서, **한 규칙으로 접는다** — `.ws-page > * + *`.
+ * 원본과 값이 다른 곳은 제목 영역(18px) 하나뿐이라 그것만 따로 둔다.
+ *
+ * 클래스 이름은 원본을 쓰지 않는다. 원본 CSS를 싣지 않으므로 이름을 맞출 이유가 없고,
+ * `.tb`·`.gvwbox` 같은 짧은 이름은 다른 스타일과 부딪힌다. 대응은 주석에 적는다.
+ * ========================================================================== */
+
+/* --- 화면 루트  (원본 .sub_contents) --------------------------------------- */
+.ws-page { padding: var(--ws-page-pad); min-width: 0; }
+.ws-page > * + * { margin-top: var(--ws-gap-region); }
+/* 제목 영역 아래만 18px — 원본 .pgtbox{margin:0 0 18px} */
+.ws-page > .ws-pgt + * { margin-top: 18px; }
+
+/* --- 화면 제목  (원본 .pgtbox) --------------------------------------------- */
+.ws-pgt { display: flex; align-items: center; gap: var(--ws-gap-inter); min-height: 24px; }
+.ws-pgt__tit { font-size: var(--ws-font-size-xl); font-weight: 700; color: var(--ws-text); }
+.ws-pgt__tools { display: flex; gap: var(--ws-gap-adjacent); }
+/* 경로 — 원본 .location: 15px · #5e5e5e · 마지막은 #171717/600 · 사이는 45° 꺾쇠 */
+.ws-pgt__crumb { margin-left: auto; display: flex; align-items: center; gap: 12px; color: var(--ws-crumb); font-size: 15px; }
+.ws-pgt__crumb li { position: relative; display: flex; align-items: center; }
+.ws-pgt__crumb li + li::before {
+  content: ''; width: 5px; height: 5px; margin-right: 12px;
+  border-top: 1px solid var(--ws-text-disabled); border-right: 1px solid var(--ws-text-disabled); rotate: 45deg;
+}
+.ws-pgt__crumb li:last-child { color: var(--ws-crumb-last); font-weight: 600; }
+
+/* 제목 옆 작은 칩 — 마이메뉴 등록 · 화면 잠금 */
+.ws-chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px;
+  border: 1px solid var(--ws-border); border-radius: var(--ws-radius-sm);
+  background: var(--ws-surface); color: var(--ws-text-sub); font-size: var(--ws-font-size-sm);
+  cursor: pointer;
+}
+.ws-chip:hover { border-color: var(--ws-field-border); }
+.ws-chip[aria-pressed='true'] { border-color: var(--ws-action-search); color: var(--ws-text-brand); }
+
+/* --- 구획  (제목줄 + 내용) ------------------------------------------------- */
+.ws-sec > .ws-tit + * { margin-top: var(--ws-gap-inter); } /* 원본 .titbox{margin-bottom:12px} */
+
+/* --- 제목줄  (원본 .titbox > .lta / .rta) ---------------------------------- */
+.ws-tit { display: flex; align-items: center; justify-content: space-between; gap: var(--ws-gap-inter); min-height: var(--ws-control-h); }
+.ws-tit__l { display: flex; align-items: center; gap: var(--ws-gap-inter); min-width: 0; }
+.ws-tit__r { display: flex; align-items: center; justify-content: flex-end; gap: var(--ws-gap-adjacent); flex: 1; }
+.ws-tit__h { font-size: 15px; font-weight: 700; color: var(--ws-text); } /* 원본 .titbox h3 1.5rem */
+
+/* 건수 — 앞 요소와 1px 세로선으로 가른다(원본 .titbox * + .total:before) */
+.ws-total { position: relative; padding-left: var(--ws-gap-inter); color: var(--ws-text-sub); }
+.ws-total::before { content: ''; position: absolute; left: 0; top: 50%; translate: 0 -50%; width: 1px; height: 12px; background: var(--ws-border); }
+.ws-total strong { margin-left: 5px; color: var(--ws-text-brand); font-variant-numeric: tabular-nums; }
+
+/* 버튼 묶음 사이 구분선 — 원본 `rta 안의 btn_wrap 사이` */
+.ws-sep { width: 1px; height: 16px; margin: 0 8px; background: var(--ws-border); flex: none; }
+
+/* --- 조회 영역  (원본 .shbox) ---------------------------------------------- */
+.ws-sh { position: relative; padding-bottom: 20px; border-bottom: 1px solid var(--ws-border); }
+.ws-sh__body { margin-top: var(--ws-gap-block); } /* 원본 .shbox_inner{margin-top:16px} */
+.ws-sh__fold {
+  position: absolute; left: 50%; bottom: -12px; translate: -50% 0; width: 60px; height: 12px;
+  border: 1px solid var(--ws-border); border-top: 0; border-radius: 0 0 12px 12px;
+  background: var(--ws-surface); cursor: pointer; padding: 0;
+}
+.ws-sh__fold::after {
+  content: ''; position: absolute; left: 50%; top: 2px; translate: -50% 0;
+  border: 4px solid transparent; border-top-color: var(--ws-text-muted);
+}
+.ws-sh__fold[aria-expanded='true']::after { top: -2px; border-top-color: transparent; border-bottom-color: var(--ws-text-muted); }
+
+/* 조회 영역 안의 표는 선이 없다 — 라벨이 입력 앞에 붙는 한 줄 폼이다 */
+.ws-sh .ws-tb { border-top: 0; }
+.ws-sh .ws-tb th, .ws-sh .ws-tb td { height: var(--ws-search-row-h); border: 0; background: transparent; vertical-align: middle; }
+.ws-sh .ws-tb th { padding: 0 19px 0 0; font-weight: 500; white-space: nowrap; }
+.ws-sh .ws-tb th:not(:first-child) { padding-left: 60px; } /* 원본 .shbox .tb th{padding:0 19px 0 60px} */
+.ws-sh .ws-tb td { padding: 0; }
+
+/* --- 입력 표  (원본 .tbbox > .tb .w2tb_th / .w2tb_td) ---------------------- */
+.ws-tb { width: 100%; border-top: 1px solid var(--ws-border-strong); table-layout: fixed; }
+.ws-tb th, .ws-tb td { height: var(--ws-form-row-h); padding: 6px 10px 5px; border: 1px solid var(--ws-border); vertical-align: middle; }
+.ws-tb tr:first-child th, .ws-tb tr:first-child td { border-top: 0; }
+.ws-tb th:first-child { border-left: 0; }
+.ws-tb td:last-child { border-right: 0; }
+.ws-tb th { background: var(--ws-surface-head); font-weight: 400; text-align: left; }
+.ws-tb td { background: var(--ws-surface); }
+/* 필수 — 원본 th.req nobr:after. 글자로도 남긴다(색만으로 알리지 않는다) */
+.ws-tb th.req::after, .ws-req::after { content: ' *'; color: var(--ws-text-danger); }
+.ws-tb td > * + * { margin-left: var(--ws-gap-intra); }
+.ws-tb .ws-desc { display: block; margin: 4px 0 0; }
+
+/* --- 그리드 영역  (원본 .gvwbox) ------------------------------------------- */
+.ws-gv { position: relative; }
+
+/* --- 하단 버튼줄  (원본 .btnbox) ------------------------------------------- */
+.ws-btnbox { display: flex; align-items: center; justify-content: space-between; gap: var(--ws-gap-inter); }
+.ws-btnbox__c { display: flex; justify-content: center; gap: 6px; flex: 1; }
+.ws-btnbox .ws-btn { padding: 0 27px; } /* 원본 .btnbox .btn_cm{padding:0 27px} */
+
+/* --- 안내문  (원본 .msgbox) ------------------------------------------------ */
+.ws-msg { color: var(--ws-text-sub); font-size: var(--ws-font-size-md); line-height: 18px; }
+.ws-msg__tit { font-weight: 600; }
+.ws-msg ul { margin-top: var(--ws-gap-item); display: flex; flex-direction: column; gap: 2px; }
+.ws-msg li { position: relative; padding-left: 10px; }
+.ws-msg li::before { content: ''; position: absolute; left: 0; top: 8px; width: 3px; height: 3px; border-radius: 50%; background: var(--ws-text-muted); }
+.ws-desc { font-size: var(--ws-font-size-sm); color: var(--ws-text-muted); line-height: 18px; }
+
+/* --- 둘로 나누기 ---------------------------------------------------------- */
+.ws-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--ws-gap-region); }
+.ws-split--21 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.ws-split--12 { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.ws-split > .ws-sec { min-width: 0; }
+
+/* 숫자 열 */
+.ws-num { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* --- 정적 목록 표 — 그리드와 같은 모양, 편집·정렬 없음 --------------------
+ * 행이 적고(≤50) 조회만 하는 자리에 쓴다. Tabulator를 띄울 이유가 없다.
+ * 헤더 34 · 행 35 · 윗선 #aaa — 그리드와 한 치수라 섞여 있어도 한 화면으로 읽힌다. */
+.ws-gtb { width: 100%; border-top: 1px solid var(--ws-border-strong); font-variant-numeric: tabular-nums; }
+.ws-gtb th, .ws-gtb td { padding: 5px 10px; line-height: 24px; border-bottom: 1px solid var(--ws-border); text-align: left; }
+.ws-gtb thead th { height: var(--ws-grid-head-h); padding-block: 0; background: var(--ws-surface-head); font-weight: 400; text-align: center; border-right: 1px solid var(--ws-border); }
+.ws-gtb thead th:last-child { border-right: 0; }
+.ws-gtb tbody td { height: var(--ws-grid-row-h); border-right: 1px solid var(--ws-border-lighter); }
+.ws-gtb tbody td:last-child { border-right: 0; }
+.ws-gtb tbody tr:hover td { background: var(--ws-surface-hover); }
+.ws-gtb tfoot th, .ws-gtb tfoot td { height: var(--ws-grid-row-h); background: var(--ws-surface-head); border-top: 1px solid var(--ws-border-strong); font-weight: 600; }
+.ws-gtb .ws-num { text-align: right; }
+.ws-gtb tr.is-on td { background: var(--ws-surface-selected); box-shadow: inset 3px 0 0 var(--ws-action-search); }
+.ws-gtb tr.is-on td + td { box-shadow: none; }
+
+/* --- 차트 상자 — 그림자 없는 평면. 원본에 카드가 없다 --------------------- */
+.ws-chartbox { padding: 16px; border: 1px solid var(--ws-border); border-radius: var(--ws-radius); background: var(--ws-surface); }

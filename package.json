@@ -1,0 +1,27 @@
+{
+  "name": "ez-admin-design-system-2",
+  "private": true,
+  "type": "module",
+  "description": "사내 관리자센터(WebSquare) 퍼블리싱을 정본으로 한 어드민 디자인 시스템과 목업",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run check:contrast && vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "audit": "node scripts/audit.mjs"
+  },
+  "dependencies": {
+    "echarts": "^6.1.0",
+    "tabulator-tables": "^6.5.3",
+    "vue": "^3.5.13",
+    "vue-echarts": "^8.3.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vue-tsc": "^2.2.0"
+  }
+}

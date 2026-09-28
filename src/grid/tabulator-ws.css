@@ -1,0 +1,121 @@
+/* =============================================================================
+ * Tabulator → WebSquare 그리드(.wq_gvw) 스킨
+ *
+ * 구조는 tabulator_simple이 준다(빼면 표가 세로로 무너진다 — DS1에서 겪었다).
+ * 그 위에 원본 실측값을 덮는다.
+ *
+ *   헤더 34px · #f3f5f6 · 14px/400      (.gridHeaderTDDefault)
+ *   행   35px · 선 #ccc                 (.gridBodyDefault)
+ *   윗선 1px #aaa                        (.tb와 같은 규칙)
+ *
+ * **편집 셀에만 안쪽 둥근 상자를 준다.** 원본은 `:not(.w2grid_default_readonly)`로
+ * 편집 가능 셀과 읽기 전용 셀을 가른다. 상자는 "여기 고칠 수 있다"는 신호라
+ * 읽기 전용 셀에 주면 거짓말이 된다. Tabulator는 편집 셀에 `.tabulator-editable`을 붙인다.
+ *
+ * 선택자는 `.ws-datagrid .tabulator-header .tabulator-col`(0,3,0)로 잡는다 —
+ * tabulator_simple이 같은 특정성으로 흰 배경을 박아 두어서 한 단계 낮으면 진다.
+ * ========================================================================== */
+@import 'tabulator-tables/dist/css/tabulator_simple.min.css';
+
+.ws-datagrid.tabulator {
+  border: 0;
+  border-top: 1px solid var(--ws-border-strong);
+  border-radius: 0;
+  background: var(--ws-surface);
+  font-size: var(--ws-font-size);
+  color: var(--ws-text);
+}
+
+/* --- 헤더 ------------------------------------------------------------------ */
+.ws-datagrid .tabulator-header {
+  background: var(--ws-surface-head);
+  border-bottom: 1px solid var(--ws-border);
+  color: var(--ws-text);
+  font-weight: 400;
+}
+.ws-datagrid .tabulator-header .tabulator-col {
+  background: var(--ws-surface-head);
+  border-right: 1px solid var(--ws-border);
+}
+.ws-datagrid .tabulator-header .tabulator-col:last-child { border-right: 0; }
+.ws-datagrid .tabulator-header .tabulator-col .tabulator-col-content { padding: 0 8px; min-height: var(--ws-grid-head-h); display: flex; align-items: center; }
+.ws-datagrid .tabulator-header .tabulator-col .tabulator-col-title { font-weight: 400; text-align: center; }
+.ws-datagrid .tabulator-header .tabulator-col.tabulator-sortable:hover { background: var(--ws-surface-head-hover); }
+.ws-datagrid .tabulator-header .tabulator-col .tabulator-col-sorter { color: var(--ws-text-muted); }
+/* 헤더 필수 표시 — 원본 th.gridHeaderTDDefault.req nobr:after */
+.ws-datagrid .tabulator-col.req .tabulator-col-title::after { content: ' *'; color: var(--ws-text-danger); }
+
+/* 헤더 필터 입력 */
+.ws-datagrid .tabulator-header-filter input,
+.ws-datagrid .tabulator-header-filter select {
+  height: 26px; padding: 0 6px;
+  border: 1px solid var(--ws-field-border); border-radius: var(--ws-radius-sm);
+  background: var(--ws-surface); font-size: var(--ws-font-size-sm);
+}
+
+/* --- 본문 ------------------------------------------------------------------ */
+.ws-datagrid .tabulator-row,
+.ws-datagrid .tabulator-row.tabulator-row-even,
+.ws-datagrid .tabulator-row.tabulator-row-odd {
+  background: var(--ws-surface);
+  border-bottom: 1px solid var(--ws-border);
+}
+/* 행 35px = 선 1 + 안쪽 34. 안쪽을 여백 5 + 줄 24 + 여백 5로 나눠야 24px 뱃지와
+   글자가 같은 높이에 들어간다. 여백을 8로 두면 뱃지 칸만 41px로 부푼다(실측). */
+.ws-datagrid .tabulator-row .tabulator-cell {
+  position: relative;
+  padding: 5px 8px;
+  /* 칸이 inline-block이라 기본 baseline 정렬이면 줄 아래 여백 2px이 행에 섞인다.
+     Tabulator는 그 높이를 재서 **모든 칸에 인라인 height로 다시 박는다** — 35가 37이 됐다(실측).
+     top으로 붙여 기준선 여백을 없앤다. 세로 가운데는 여백 5 + 줄 24 + 여백 5가 맡는다. */
+  vertical-align: top;
+  border-right: 1px solid var(--ws-border-lighter);
+  line-height: 24px;
+}
+.ws-datagrid .tabulator-row .tabulator-cell:last-child { border-right: 0; }
+.ws-datagrid .tabulator-row:hover { background: var(--ws-surface-hover); }
+
+/* 편집 셀 — 원본 :not(.w2grid_default_readonly)의 안쪽 상자 */
+.ws-datagrid .tabulator-row .tabulator-cell.tabulator-editable { padding: 5px 10px; cursor: text; }
+.ws-datagrid .tabulator-row .tabulator-cell.tabulator-editable::before {
+  content: ''; position: absolute; inset: 3px;
+  border: 1px solid var(--ws-field-border); border-radius: var(--ws-radius);
+  pointer-events: none;
+}
+.ws-datagrid .tabulator-row .tabulator-cell.tabulator-editing::before { border-color: var(--ws-field-border-focus); box-shadow: 0 0 0 1px var(--ws-field-border-focus); }
+.ws-datagrid .tabulator-row .tabulator-cell.tabulator-editing input,
+.ws-datagrid .tabulator-row .tabulator-cell.tabulator-editing select { padding: 0 2px; border: 0; background: transparent; }
+
+/* 잠긴 행 — 편집 상자만 거둔다. **글자를 흐리게 하지 않는다** — 잠긴 건 대개 진행 중인
+   건이라 오히려 제일 중요하다. 흐리게 하면 비활성으로 읽힌다(처음에 그랬다). */
+.ws-datagrid .tabulator-row.ws-row-locked .tabulator-cell.tabulator-editable::before { display: none; }
+.ws-datagrid .tabulator-row.ws-row-locked .tabulator-cell.tabulator-editable { cursor: default; }
+
+/* 선택 행 — 배경만으로는 대비가 1.1:1이라 좌측 막대를 함께 준다 */
+.ws-datagrid .tabulator-row.ez-row-selected { background: var(--ws-surface-selected); box-shadow: inset 3px 0 0 var(--ws-action-search); }
+
+/* 범위 선택 */
+.ws-datagrid .tabulator-row .tabulator-cell.tabulator-range-selected:not(.tabulator-range-row-header) { background: var(--ws-surface-range); }
+.ws-datagrid .tabulator-range-overlay .tabulator-range.tabulator-range-active { border: 2px solid var(--ws-action-search); }
+.ws-datagrid .tabulator-row .tabulator-cell.tabulator-range-row-header { background: var(--ws-surface-head); color: var(--ws-text-muted); }
+
+/* 합계 행 — 원본 .gridFooterTDDefault */
+.ws-datagrid .tabulator-footer { background: var(--ws-surface-head); border-top: 1px solid var(--ws-border); }
+.ws-datagrid .tabulator-calcs-holder { background: var(--ws-surface-head); border-top: 1px solid var(--ws-border-strong); }
+.ws-datagrid .tabulator-calcs-holder .tabulator-row { background: var(--ws-surface-head); font-weight: 600; }
+
+.ws-datagrid .tabulator-placeholder .tabulator-placeholder-contents { color: var(--ws-text-muted); font-size: var(--ws-font-size); font-weight: 400; padding: 48px 0; }
+
+/* 체크박스 컬럼 */
+/* 브라우저 기본 margin 3px + baseline 정렬로 이 칸만 36px가 되고, Tabulator가 그 높이를
+   전 칸에 인라인으로 복사했다(실측 35 → 37). 여백을 없애고 가운데에 둔다 */
+.ws-datagrid .sel-col input { width: 16px; height: 16px; margin: 0; vertical-align: middle; accent-color: var(--ws-action-search); }
+
+/* 셀 안 글자색 — 원본 .txt_red / .txt_blue / .txt_green. 교정된 값을 쓴다 */
+.ws-datagrid .txt-red { color: var(--ws-text-danger); }
+.ws-datagrid .txt-blue { color: var(--ws-text-link); }
+.ws-datagrid .txt-green { color: var(--ws-text-success); }
+.ws-datagrid .ws-cell-link { color: var(--ws-text-link); text-decoration: underline; cursor: pointer; }
+
+/* 뱃지(24px inline-flex)가 기준선에 붙으면 칸이 34.5로 반 픽셀 부푼다 — 반올림되면 행 36 */
+.ws-datagrid .tabulator-cell .ws-badge { vertical-align: top; }

@@ -1,0 +1,168 @@
+/* =============================================================================
+ * EZ Admin Design System 2 — 토큰
+ * -----------------------------------------------------------------------------
+ * 사내 관리자센터(WebSquare 5 BO-UI)의 퍼블리싱을 **정본**으로 삼는다.
+ * 값은 전부 `ez-websquare-vue`의 원본 `cm/css/contents.css`·`base.css`에서
+ * 실측하거나 빈도로 뽑은 것이다 — 눈대중으로 고른 값은 없다.
+ *
+ * 원본에는 커스텀 프로퍼티가 0개다. 여기가 그 하드코딩 값에 이름을 붙인 층이다.
+ *
+ * **예외는 대비 미달 8건뿐이다.** "모양 유지, 값만 고침"(2026-09-28 결정)에 따라
+ * 같은 색상·채도에서 명도만 내렸다. 원본 값을 옆에 적어 둔다.
+ * 산출은 `scripts/fix-contrast.mjs`, 검증은 `npm run check:contrast`.
+ * ========================================================================== */
+
+:root {
+  /* --- 글자 --------------------------------------------------------------- */
+  --ws-text: #222222;          /* 원본 41회 — 본문·라벨·셀. 흰 바탕 15.9:1 */
+  --ws-text-sub: #444444;      /* 원본 30회 — 보조 버튼 글자 */
+  --ws-text-muted: #6f6f6f;    /* 교정 — 원본 #727272. 흰 4.81 통과, 머리 면 4.40 → 4.59 */
+  --ws-text-disabled: #999999; /* 비활성. WCAG 대비 요건 면제 대상 */
+  --ws-text-strong: #20252a;
+  --ws-text-inverse: #ffffff;
+  --ws-text-badge: #525252;    /* 원본 .badge 글자 */
+  --ws-text-link: #146dd5;     /* 교정 — 원본 #1573e1. 흰 4.59 통과, 머리 면 4.20 → 4.60 */
+
+  /* 교정 — 대비는 **머리 면(#f3f5f6) 기준**이다. 폼 라벨 칸·그리드 헤더가 이 색이고
+     색 글자가 실제로 여기 올라간다(원본 `th.gridHeaderTDDefault.txt_red`).
+     가장 어두운 면에서 통과하면 흰 면에서도 통과한다. */
+  --ws-text-brand: #007d6c;    /* 원본 #009782 머리 면 3.34 → 4.63 */
+  --ws-text-danger: #dc1222;   /* 원본 #f04452 머리 면 3.40 → 4.62. 필수 표시 * */
+  --ws-text-success: #007f59;  /* 원본 #00af7a 머리 면 2.59 → 4.59 */
+  --ws-text-warning: #8a5300;  /* 원본에 경고색이 없다. 새로 둔다 */
+
+  /* --- 면 ----------------------------------------------------------------- */
+  --ws-surface: #ffffff;         /* 원본 131회 — 최빈 */
+  --ws-surface-head: #f3f5f6;    /* 폼 라벨 칸 · 그리드 헤더 */
+  --ws-surface-sunken: #f6f7f9;  /* 팝업 머리 */
+  --ws-surface-raised: #fafafa;
+  --ws-surface-alt: #f2f3f4;
+  --ws-surface-badge: #eeeeee;
+  --ws-surface-hover: #f6f7f9;
+  --ws-surface-head-hover: #eceef0; /* 정렬 가능한 헤더 hover */
+  --ws-surface-range: #e6f4f2;      /* 그리드 범위 선택 */
+  --ws-surface-selected: #edfefb; /* brand-surface */
+  /* 상태 뱃지 면 — 원본에 없다. 글자색 계열을 옅게 깐 값이다 */
+  --ws-surface-danger: #fef2f3;
+  --ws-surface-success: #e6f7f1;
+  --ws-surface-info: #f0f6fe;
+  --ws-surface-warning: #fff4e0;
+  --ws-surface-danger-hover: #fff5f5;
+
+  /* --- 선 -----------------------------------------------------------------
+   * 둘로 가른다. **표·그리드·구분선은 장식선**이라 1.4.11 대상이 아니다 — 셀 배경과
+   * 정렬이 구분을 맡는다. 그래서 원본 #ccc를 그대로 둔다.
+   * **입력·선택 컨트롤의 테두리는 경계를 알리는 유일한 선**이라 3:1이 필요하다.
+   * 이것만 교정한다 — 모양 변화가 가장 적은 쪽이다.
+   * --------------------------------------------------------------------- */
+  --ws-border: #cccccc;          /* 원본 73회 — 표·그리드·탭 밑줄 */
+  --ws-border-light: #dddddd;
+  --ws-border-lighter: #eeeeee;  /* 원본 46회 — 팝업 머리 밑줄 */
+  --ws-border-grid: #ced4da;     /* 탭 활성 테두리 */
+  --ws-border-soft: #eaeaea;     /* 로그인 상자 */
+  --ws-border-strong: #aaaaaa;   /* 입력 표 윗선 — 원본 .tb{border-top:1px solid #aaa} */
+  --ws-field-border: #939393;    /* 교정 — 원본 #cccccc 1.61:1 → 3.07:1 */
+  --ws-field-border-focus: #008472;
+
+  /* --- 액션 ---------------------------------------------------------------
+   * **주버튼이 둘이다.** 원본 규칙 그대로다.
+   *   .btn_cm.pri                 → #444  일반 주버튼(저장·등록)
+   *   .shbox .titbox .btn_cm.pri  → 초록  조회
+   *   .pop_contents > .btnbox pri → 초록  팝업 확인
+   * 초록은 "찾는다·확정한다"에만 쓴다. 저장이 초록이 아닌 이유가 이것이다.
+   * --------------------------------------------------------------------- */
+  --ws-action-primary: #444444;       /* 흰 글자 9.74:1 */
+  --ws-action-primary-hover: #222222;
+  --ws-action-search: #008472;        /* 교정 — 원본 #009782 3.65:1 → 4.62:1 */
+  --ws-action-search-hover: #006b5c;
+  --ws-action-sub: #757575;           /* 교정 — 원본 #aaaaaa 2.32:1 → 4.61:1 */
+  --ws-action-sub-hover: #5e5e5e;
+  --ws-action-default-bg: #ffffff;
+  --ws-action-default-fg: #444444;
+  --ws-action-default-border: #cccccc; /* 버튼은 글자·배경이 식별을 맡아 장식선이다 */
+
+  /* 브랜드 원색 — **글자·흰 글자 배경으로 쓰지 않는다.** 로고·넓은 면 전용 */
+  --ws-brand: #009782;           /* 원본 43회 */
+  --ws-brand-light: #99d5cd;
+  --ws-brand-surface: #edfefb;
+
+  /* 포커스 — 원본에 없다. 키보드 사용자를 위해 새로 둔다 */
+  --ws-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #008472;
+
+  /* --- 크기 --------------------------------------------------------------- */
+  --ws-control-h: 32px;     /* .w2input · .btn_cm */
+  --ws-control-h-sm: 24px;  /* 달력 옆 짧은 버튼 · 뱃지 */
+  --ws-row-h: 36px;         /* cm/template 규격 */
+  --ws-form-row-h: 44px;    /* .tb .w2tb_th/td */
+  --ws-search-row-h: 40px;  /* .shbox .tb .w2tb_th/td */
+  --ws-grid-head-h: 34px;   /* .gridHeaderTDDefault */
+  --ws-grid-row-h: 35px;    /* .gridBodyDefault */
+  --ws-tab-h: 35px;         /* .w2tabcontrol_tabhost */
+  --ws-popup-head-h: 48px;  /* .w2window_header */
+
+  /* --- 모서리 — 원본 빈도순 ---------------------------------------------- */
+  --ws-radius-sm: 3px;   /* 14회 */
+  --ws-radius-xs: 4px;   /* 16회 — 뱃지 */
+  --ws-radius: 6px;      /* 27회 — 최빈. 입력·버튼·탭 */
+  --ws-radius-lg: 8px;   /* 17회 */
+  --ws-radius-xl: 10px;  /* 18회 */
+  --ws-radius-pill: 16px;
+
+  /* --- 간격 ---------------------------------------------------------------
+   * 원본은 **인접 형제 선택자로만** 간격을 준다(`.tbbox + .gvwbox { margin-top:24px }`).
+   * contents.css의 48개 규칙에서 값을 뽑으면 사다리가 이렇게 나온다.
+   *   24px 27회 · 4px 6회 · 8px 6회 · 6px 4회 · 12px 3회
+   * --------------------------------------------------------------------- */
+  --ws-gap-adjacent: 4px;  /* 붙은 것 — 제목줄 버튼 사이 */
+  --ws-gap-item: 6px;      /* 안내문 안 줄 사이 */
+  --ws-gap-intra: 8px;     /* 폼 셀 안 제목 → 내용 */
+  --ws-gap-inter: 12px;    /* 제목줄 요소 사이 · 중첩 블록 */
+  --ws-gap-block: 16px;    /* 조회 영역 안쪽 */
+  --ws-gap-region: 24px;   /* 최상위 블록 사이 — 원본의 기본값 */
+  --ws-page-pad: 30px 48px 24px; /* .sub_contents */
+
+  /* --- 글꼴 ----------------------------------------------------------------
+   * 원본은 html{font-size:62.5%}로 1rem=10px를 만들고 1.4rem을 쓴다.
+   * 여기서는 px로 적는다 — 루트 크기에 기대면 다른 앱에 섞일 때 전부 틀어진다.
+   * --------------------------------------------------------------------- */
+  --ws-font: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ws-font-size: 14px;     /* 1.4rem — 본문·라벨·셀·버튼 전부 */
+  --ws-font-size-sm: 12px;  /* 설명 */
+  --ws-font-size-md: 13px;  /* 뱃지 */
+  --ws-font-size-lg: 16px;  /* 팝업 제목 · 구획 제목 */
+  --ws-font-size-xl: 20px;  /* 화면 제목 */
+  --ws-letter: -0.02em;     /* 원본 전역 자간 */
+
+  /* --- 셸 — websquare-bo-ui base.css 실측 --------------------------------
+   * 레일 70px(로고 칸 #000 · 메뉴 칸 #2a403d) + 슬라이드 패널 280px(흰색, 검색 칸 #000).
+   * 패널이 열리면 본문이 280px로 밀리고 최소 폭이 1210 → 1000으로 준다(.show_menu). */
+  --ws-shell-rail-w: 70px;
+  --ws-shell-rail-bg: #000000;
+  --ws-shell-rail-nav-bg: #2a403d;
+  --ws-shell-rail-on-bg: #1d2023;
+  --ws-shell-rail-fg: #9aa8a5;     /* 원본 그대로 — 레일엔 아이콘만 있어 비텍스트 3:1 기준, 4.49로 통과 */
+  --ws-shell-side-w: 280px;
+  --ws-shell-side-search-bg: #000000;
+  --ws-shell-side-input-bg: #2d3843;
+  --ws-shell-side-placeholder: #aaaaaa; /* 원본 그대로 — 5.14로 통과 */
+  --ws-shell-search-h: 52px;
+  --ws-shell-min-w: 1210px;
+  --ws-shell-min-w-open: 1000px;
+
+  /* 로그인 — 배경은 원본 login_bg.svg. 아래 색은 이미지가 늦게 뜰 때의 바탕이다 */
+  --ws-login-bg: #1b2a28;
+  --ws-login-fg: #fafafa;
+
+  /* 경로 — 원본 .location 실측 */
+  --ws-crumb: #5e5e5e;
+  --ws-crumb-last: #171717;
+
+  /* --- 차트 — Figma 기본 팔레트(@ezwel/ui v1.6.1과 같다. 사용자 결정) ----- */
+  --ws-chart-1: #2f80ed;
+  --ws-chart-2: #f2994a;
+  --ws-chart-3: #6fcf97;
+  --ws-chart-4: #bb6bd9;
+  --ws-chart-5: #56ccf2;
+  --ws-chart-6: #eb5757;
+  --ws-chart-muted: #939393;
+}
