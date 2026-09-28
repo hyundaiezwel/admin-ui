@@ -20,6 +20,9 @@
 .p-inputtext-sm, .p-button-sm, .p-select-sm .p-select-label { font-size: var(--ws-font-size-sm); }
 .p-inputtext-lg, .p-button-lg { font-size: 15px; }
 
+/* 팝업 메뉴의 체크 표시 자리(테마 · 시스템 선택) — 비어 있어도 폭을 잡아 글자가 한 줄에 선다 */
+.me-ic { display: inline-block; width: 14px; color: var(--ws-text-brand); font-weight: 700; }
+
 /* 메뉴 항목 — 되돌리기 어려운 처리는 위험 글자색(행 처리 메뉴의 확인서 파기 · 승인취소) */
 .p-menu-item.is-danger .p-menu-item-label { color: var(--ws-text-danger); }
 

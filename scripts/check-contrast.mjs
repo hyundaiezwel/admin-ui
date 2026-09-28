@@ -67,6 +67,12 @@ const PAIRS = [
   // 스크롤바 손잡이 — 비텍스트 3:1. 사이드바는 어두운 레일 위
   ['--ws-scroll-thumb', '--ws-surface', UI],
   ['--ws-side-scroll-thumb', '--ws-side-bg', UI],
+  // 상단바 — 글자 · 보조 글자 · 검색칸 안 글자 · 칸 테두리
+  ['--ws-top-fg', '--ws-top-bg', TEXT],
+  ['--ws-top-muted', '--ws-top-bg', TEXT],
+  ['--ws-top-muted', '--ws-top-q', TEXT],
+  ['--ws-top-fg', '--ws-top-q', TEXT],
+  ['--ws-top-field', '--ws-top-bg', UI],
   ['--ws-text-inverse', '--ws-action-danger-hover', TEXT],
   ['--ws-login-fg', '--ws-login-bg', TEXT],
   // 사이드바 — 두 테마 모두 어두운 면

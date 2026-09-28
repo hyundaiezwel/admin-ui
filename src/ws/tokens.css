@@ -181,6 +181,15 @@
   --ws-scroll-thumb: #8a939b;
   --ws-scroll-thumb-hover: #6f787f;
   --ws-side-scroll-thumb: #7d9591;
+  /* 상단바(D6 A) — 사이드바와 이어지는 ㄱ자 틀. 두 테마 모두 어둡다. 사이드바보다 한 단 짙게 해 경계를 준다 */
+  --ws-top-h: 48px;
+  --ws-top-bg: #1f2d2b;
+  --ws-top-fg: #e6ecea;
+  --ws-top-muted: #a9b7b4;
+  --ws-top-q: #2c3b39;
+  --ws-top-field: #7f9591;
+  --ws-top-hover: rgb(255 255 255 / 0.08);
+  --ws-top-line: rgb(255 255 255 / 0.1);
 
   /* 로그인 — 배경은 원본 login_bg.svg. 아래 색은 이미지가 늦게 뜰 때의 바탕이다 */
   --ws-login-bg: #1b2a28;

@@ -50,13 +50,10 @@ const active = computed(() => tabs.active)
       </div>
     </div>
     <button v-if="overflow" class="tb__nav" type="button" aria-label="다음 탭 보기" @click="move(1)">›</button>
-    <!-- 탭줄 오른쪽 끝 — 열린 탭 전부에 걸리는 것(지원 사업의 전역 조건)이 온다 -->
-    <div v-if="$slots.end" class="tb__end"><slot name="end" /></div>
   </div>
 </template>
 
 <style scoped>
-.tb__end { align-self: stretch; flex: none; display: flex; align-items: center; padding: 0 8px 0 12px; border-left: 1px solid var(--ws-border-lighter); }
 .tb {
   --tab-w: 180px;
   flex: none;

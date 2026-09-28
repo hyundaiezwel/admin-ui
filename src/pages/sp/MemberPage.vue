@@ -43,6 +43,7 @@ import { ctx, ctxKey, can, needRole } from '../../sp/context'
 import { memo } from '../../sp/stores'
 import { makeMembers, MEMBER_STS, type MemberRow } from '@fixtures/sp'
 import { MEMBER_ACT_LABEL, MEMBER_TO, memberActions, type MemberAct } from '../../sp/member'
+import { handoff } from '../../sp/handoff'
 
 const KW = ['회원명', '기업명', '사업자번호', 'ID']
 const CO_STS = ['610', '611', '614', '616', '710']
@@ -77,6 +78,14 @@ watch(ctxKey, () => requery())
 watch([tab, sub], () => requery())
 function search() { applied.value = { ...f.value }; requery() }
 function reset() { f.value = blank(); tab.value = 'all'; sub.value = null; search() }
+/** 통합 검색에서 회원을 고르면 그 이름으로 조회한다 — 이름은 주소가 아니라 메모리로 넘어온다 */
+watch(() => handoff.member, (name) => {
+  if (!name) return
+  f.value = { ...blank(), kwType: '회원명', kw: name }
+  tab.value = 'all'; sub.value = null
+  search()
+  handoff.member = null
+}, { immediate: true })
 const stsOf = (c: string) => MEMBER_STS.find((m) => m.code === c)!
 const tabs = computed<CountTab[]>(() => TABS.map((t) => ({
   id: t.id, label: t.label, count: base.value.filter((r) => t.codes.includes(r.sts)).length,
