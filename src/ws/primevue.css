@@ -20,6 +20,9 @@
 .p-inputtext-sm, .p-button-sm, .p-select-sm .p-select-label { font-size: var(--ws-font-size-sm); }
 .p-inputtext-lg, .p-button-lg { font-size: 15px; }
 
+/* 버튼 글자는 줄바꿈하지 않는다 — 옆 글자가 길어 버튼이 눌리면 두 줄이 돼 높이 32가 깨진다(실측 52px) */
+.p-button { white-space: nowrap; }
+
 /* 고른 칸은 굵게 — 색 말고 단서 하나 더 */
 .p-togglebutton-checked .p-togglebutton-label { font-weight: 600; }
 

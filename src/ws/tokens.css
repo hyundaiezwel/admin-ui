@@ -79,6 +79,9 @@
    * --------------------------------------------------------------------- */
   --ws-action-primary: #444444;       /* 흰 글자 9.74:1 */
   --ws-action-primary-fg: #ffffff;    /* 다크에서는 저장 버튼이 밝은 회색으로 뒤집혀 글자가 어두워진다 */
+  /* 위험 확정 버튼(되돌릴 수 없는 처리) — 흰 글자. Aura 기본 red-500은 3.76이라 미달 */
+  --ws-action-danger: #dc1222;
+  --ws-action-danger-hover: #b50f1c;
   --ws-action-primary-hover: #222222;
   --ws-action-search: #008472;        /* 교정 — 원본 #009782 3.65:1 → 4.62:1 */
   --ws-action-search-hover: #006b5c;
@@ -248,6 +251,8 @@
   --ws-action-primary: #d6dce0;
   --ws-action-primary-hover: #eef1f3;
   --ws-action-primary-fg: #16191c;
+  --ws-action-danger: #c62a35;
+  --ws-action-danger-hover: #a8222c;
   --ws-action-search: #008472;
   --ws-action-search-hover: #006b5c;
   --ws-action-sub: #5c666e;

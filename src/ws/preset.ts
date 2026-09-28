@@ -118,6 +118,12 @@ const button = {
       color: 'var(--ws-action-primary-fg)', hoverColor: 'var(--ws-action-primary-fg)', activeColor: 'var(--ws-action-primary-fg)',
       focusRing: { color: 'var(--ws-field-border-focus)', shadow: 'none' },
     },
+    danger: {
+      background: 'var(--ws-action-danger)', hoverBackground: 'var(--ws-action-danger-hover)', activeBackground: 'var(--ws-action-danger-hover)',
+      borderColor: 'var(--ws-action-danger)', hoverBorderColor: 'var(--ws-action-danger-hover)', activeBorderColor: 'var(--ws-action-danger-hover)',
+      color: 'var(--ws-text-inverse)', hoverColor: 'var(--ws-text-inverse)', activeColor: 'var(--ws-text-inverse)',
+      focusRing: { color: 'var(--ws-field-border-focus)', shadow: 'none' },
+    },
     secondary: {
       background: 'var(--ws-action-sub)', hoverBackground: 'var(--ws-action-sub-hover)', activeBackground: 'var(--ws-action-sub-hover)',
       borderColor: 'var(--ws-action-sub)', hoverBorderColor: 'var(--ws-action-sub-hover)', activeBorderColor: 'var(--ws-action-sub-hover)',
@@ -155,6 +161,26 @@ const toggle = {
   icon: { color: 'var(--ws-text-sub)', hoverColor: 'var(--ws-text)', checkedColor: 'var(--ws-action-primary-fg)' },
 }
 
+const pager = {
+  navButton: {
+    background: 'transparent', hoverBackground: 'var(--ws-surface-hover)', selectedBackground: 'var(--ws-action-primary)',
+    color: 'var(--ws-text-sub)', hoverColor: 'var(--ws-text)', selectedColor: 'var(--ws-action-primary-fg)',
+  },
+  currentPageReport: { color: 'var(--ws-text-sub)' },
+}
+
+const toggleSwitch = {
+  root: {
+    background: 'var(--ws-text-muted)', hoverBackground: 'var(--ws-text-sub)', disabledBackground: 'var(--ws-surface-alt)',
+    checkedBackground: 'var(--ws-action-search)', checkedHoverBackground: 'var(--ws-action-search-hover)',
+  },
+  handle: {
+    background: 'var(--ws-surface)', hoverBackground: 'var(--ws-surface)', disabledBackground: 'var(--ws-text-disabled)',
+    checkedBackground: 'var(--ws-surface)', checkedHoverBackground: 'var(--ws-surface)',
+    color: 'var(--ws-text-muted)', hoverColor: 'var(--ws-text-muted)', checkedColor: 'var(--ws-action-search)', checkedHoverColor: 'var(--ws-action-search)',
+  },
+}
+
 export const WsPreset = definePreset(Aura, {
   semantic: {
     primary: primaryRamp,
@@ -185,6 +211,16 @@ export const WsPreset = definePreset(Aura, {
       root: { padding: '0', borderRadius: 'var(--ws-radius)', fontWeight: '400' },
       content: { padding: '5px 12px', borderRadius: '0', checkedShadow: 'none' },   // 2 + 10 + 20 = 32
       colorScheme: { light: toggle, dark: toggle },
+    },
+    // 원본 페이징 — 32 정사각, 현재 쪽은 저장 버튼 색. Aura 기본은 40px 원이다
+    paginator: {
+      root: { padding: '0', gap: '4px', background: 'transparent' },
+      navButton: { width: '32px', height: '32px', borderRadius: 'var(--ws-radius)' },
+      colorScheme: { light: pager, dark: pager },
+    },
+    // 끈 상태 트랙이 Aura 기본(slate-300)이면 흰 바탕과 1.5:1 — 켜졌는지 꺼졌는지가 안 읽힌다
+    toggleswitch: {
+      colorScheme: { light: toggleSwitch, dark: toggleSwitch },
     },
     dialog: { root: { borderRadius: 'var(--ws-radius-lg)' }, header: { padding: '12px 48px 12px 32px' }, content: { padding: '20px 32px' }, footer: { padding: '0 32px 24px', gap: '6px' } },
     tabs: {

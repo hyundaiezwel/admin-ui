@@ -135,3 +135,7 @@
 .ws-datagrid.tabulator .tabulator-row .tabulator-cell.tabulator-range-row-header.tabulator-range-selected { background-color: var(--ws-action-search); color: var(--ws-text-inverse); }
 .ws-datagrid.tabulator .tabulator-tableholder { background: var(--ws-surface); }
 .ws-datagrid.tabulator .tabulator-cell.tabulator-editing input { color: var(--ws-text); }
+
+/* 묶음 경계 — 2단 머리글의 첫 칸. `.ws-gtb .g`와 같은 선이다(12열을 넷씩 읽게) */
+.ws-datagrid.tabulator .tabulator-col.ws-col-g,
+.ws-datagrid.tabulator .tabulator-row .tabulator-cell.ws-col-g { border-left: 2px solid var(--ws-border-strong); }

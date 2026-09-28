@@ -63,6 +63,8 @@ const PAIRS = [
   ['--ws-text-inverse', '--ws-shell-side-input-bg', TEXT],
   // 건수 배지 — 위험색 바탕 흰 글자
   ['--ws-text-inverse', '--ws-count-bg', TEXT],
+  ['--ws-text-inverse', '--ws-action-danger', TEXT],
+  ['--ws-text-inverse', '--ws-action-danger-hover', TEXT],
   ['--ws-login-fg', '--ws-login-bg', TEXT],
   // 사이드바 — 두 테마 모두 어두운 면
   ['--ws-side-fg', '--ws-side-bg', TEXT],

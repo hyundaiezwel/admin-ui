@@ -9,7 +9,7 @@ import ToastEventBus from 'primevue/toasteventbus'
  *
  * 컴포넌트 밖(검증 함수 등)에서도 부르므로 useToast() 대신 이벤트 버스로 보낸다.
  */
-export type Tone = 'info' | 'success' | 'danger'
+export type Tone = 'info' | 'success' | 'warning' | 'danger'
 export function notify(text: string, tone: Tone = 'info', ms = 3200) {
-  ToastEventBus.emit('add', { severity: tone === 'danger' ? 'error' : tone, summary: text, life: ms })
+  ToastEventBus.emit('add', { severity: tone === 'danger' ? 'error' : tone === 'warning' ? 'warn' : tone, summary: text, life: ms })
 }

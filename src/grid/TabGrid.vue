@@ -61,12 +61,10 @@ onMounted(() => {
   table.value = new Tabulator(el.value, {
     data: props.rows,
     columns: withSelect(props.columns),
-    height: props.height,
+    // `auto`는 서버 페이징 목록용 — 한 쪽(최대 100행)만 받으니 표가 제 키만큼 늘고 가상 렌더가 필요 없다
+    ...(props.height === 'auto' ? { renderVertical: 'basic' } : { height: props.height, renderVertical: 'virtual' }),
     layout: 'fitColumns',
     index: 'id',
-    // 대용량 목록은 가상 렌더가 기본이다. 20행짜리 화면에도 켜 둔다 — 끄고 켜는 분기가 생기면
-    // "이 화면만 느리다"의 원인이 하나 는다
-    renderVertical: 'virtual',
     placeholder: '조회 결과가 없습니다.',
     // 선택 행 강조 — 배경만으로는 대비 1.1:1이라 좌측 막대를 함께 준다.
     // 잠긴 행(진행 중 프로모션 등)은 편집 상자를 거둔다 — 고칠 수 없는데 상자를 그리면 거짓말이다
@@ -99,7 +97,9 @@ onMounted(() => {
 
 watch(
   () => props.rows,
-  (rows) => table.value?.replaceData(rows),
+  // 데이터가 바뀌면(재조회 · 쪽 넘김) 선택을 푼다. 선택은 행 id로 들고 있어서, 두면 화면에 없는 행이
+  // 선택된 채 남아 일괄 처리에 섞인다(서버 페이징 목록 실측 — 2쪽에서 "선택 4건")
+  (rows) => { table.value?.replaceData(rows); rowSel.clear() },
 )
 
 watch(
@@ -107,7 +107,9 @@ watch(
   (cols) => table.value?.setColumns(withSelect(cols)),
 )
 
-onBeforeUnmount(() => table.value?.destroy())
+// 조회 중에는 QueryState가 그리드를 내린다. 내려가는 그리드의 선택도 사라지므로 0을 알린다 —
+// 안 알리면 화면의 "선택 N건"과 일괄 버튼이 없는 선택을 붙들고 있다
+onBeforeUnmount(() => { table.value?.destroy(); emit('selectionChange', 0) })
 
 defineExpose({
   /** 조회 결과 전체를 내보낸다. 화면에 보이는 행만이 아니다 */
