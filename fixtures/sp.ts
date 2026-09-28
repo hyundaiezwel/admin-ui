@@ -213,6 +213,117 @@ export function makeCompanies(key: string, year: number, n = 780): CompanyRow[] 
   })
 }
 
+/* --- 참여회원 현황 · 포인트 · 이용내역 ------------------------------------ */
+/** 회원 상태 7종(지어낸 코드). 뒤쪽 이용정지 · 환불 넷은 기업 상태와 이름을 같이 쓴다 */
+export const MEMBER_STS = [
+  { code: 'M0', label: '미가입', tone: 'mute' }, { code: 'M1', label: '이용중', tone: 'success' },
+  { code: 'M2', label: '이용정지', tone: 'danger' }, { code: 'M3', label: '환불요청', tone: 'warning' },
+  { code: 'M4', label: '환불대상', tone: 'info' }, { code: 'M5', label: '환불완료', tone: 'mute' }, { code: 'M6', label: '환불실패', tone: 'danger' },
+] as const
+export interface MemberRow {
+  id: string; no: number; name: string; birth: string; loginId: string; company: string; bizNo: string; coSts: string; sts: string
+  gender: 'M' | 'F'; partner: boolean; paid: boolean; growth: boolean
+  remain: number; refundAcct: string; stopAt: string; useUntil: string; phone: string; email: string
+}
+export function makeMembers(key: string, year: number, n = 1400): MemberRow[] {
+  const r = rng(seedOf('member' + key))
+  const cos = Array.from({ length: 120 }, (_, i) => company(r, i + 20000))
+  return Array.from({ length: n }, (_, i) => {
+    const c = pick(r, cos)
+    const sts = weighted(r, [['M1', 70], ['M0', 8], ['M2', 8], ['M3', 5], ['M4', 4], ['M5', 4], ['M6', 1]])
+    const y = 1965 + Math.floor(r() * 38)
+    const stopped = sts !== 'M1' && sts !== 'M0'
+    return {
+      id: `P-${pad(i + 1, 6)}`, no: n - i, name: pick(r, NAMES), birth: `${y}.${pad(1 + Math.floor(r() * 12), 2)}.${pad(1 + Math.floor(r() * 28), 2)}`,
+      loginId: `user${pad(Math.floor(r() * 999999), 6)}`, company: c.name, bizNo: c.bizNo,
+      coSts: stopped ? pick(r, ['610', '611', '710']) : pick(r, ['611', '611', '614', '616']), sts,
+      gender: r() < 0.55 ? 'M' : 'F', partner: r() < 0.1, paid: r() < 0.93, growth: c.growth,
+      remain: Math.round((r() * 400_000) / 1000) * 1000,
+      refundAcct: stopped && r() < 0.7 ? `${pick(r, ['국민', '신한', '우리', '기업', '농협'])} 1002-${pad(Math.floor(r() * 999999), 6)}-${pad(Math.floor(r() * 99), 2)}` : '',
+      stopAt: stopped ? ymd(day(year, r, 60, 180)) : '', useUntil: `${year}.12.31`,
+      phone: `010-${pad(Math.floor(r() * 9999), 4)}-${pad(Math.floor(r() * 9999), 4)}`, email: `m${pad(i, 5)}@example.com`,
+    }
+  })
+}
+
+/** 포인트 종류 — 정산 대상(기본 재원 3 + 이벤트) · 비정산. 이벤트 이름은 일반화했다 */
+export const POINT_KINDS = [
+  { group: '정산 · 기본 재원', items: ['지원기관 포인트', '기업 포인트', '개인 포인트'] },
+  { group: '정산 · 이벤트', items: ['웰컴 포인트', '설문 참여 이벤트', '추천 이벤트', '동반가족 포인트', '지역 근로자 추가', '연말 소진 이벤트', '보상 포인트(온라인)'] },
+  { group: '비정산', items: ['비정산 이벤트'] },
+]
+export const EMP_STS = ['재직', '복직', '전입', '휴직', '휴직사용', '전출', '퇴직', '퇴직사용', '아이디미발급']
+export interface PointRow {
+  id: string; no: number; name: string; empNo: string; birth: string; dept: string; emp: string
+  init: number; real: number; base: number; online: number; card: number; receipt: number; remain: number
+}
+export function makePoints(companyId: string, n = 180): PointRow[] {
+  const r = rng(seedOf('point' + companyId))
+  const depts = ['경영지원팀', '영업1팀', '영업2팀', '생산관리팀', '연구소', '품질팀']
+  return Array.from({ length: n }, (_, i) => {
+    const init = 400_000
+    const real = r() < 0.08 ? 400_000 + 100_000 : init
+    const used = Math.round((real * r() * 0.9) / 1000) * 1000
+    const online = Math.round((used * (0.4 + r() * 0.4)) / 1000) * 1000
+    const card = Math.round(((used - online) * r()) / 1000) * 1000
+    const receipt = Math.round(((used - online - card) * r()) / 1000) * 1000
+    const base = used - online - card - receipt
+    return {
+      id: `${companyId}-${pad(i + 1, 4)}`, no: n - i, name: pick(r, NAMES), empNo: `E${pad(1000 + i, 5)}`,
+      birth: `${1965 + Math.floor(r() * 38)}.${pad(1 + Math.floor(r() * 12), 2)}.${pad(1 + Math.floor(r() * 28), 2)}`,
+      dept: pick(r, depts), emp: weighted(r, [['재직', 85], ['휴직', 4], ['퇴직사용', 3], ['퇴직', 3], ['전입', 2], ['복직', 2], ['아이디미발급', 1]]),
+      init, real, base, online, card, receipt, remain: real - used,
+    }
+  })
+}
+
+/** 제휴사 — 실명 대신 업종 + 기호 */
+export const PARTNERS = [
+  ...['A', 'B', 'C', 'D', 'E', 'F'].map((x) => `숙박 ${x}`), ...['A', 'B', 'C', 'D'].map((x) => `여행 ${x}`),
+  ...['A', 'B', 'C'].map((x) => `레저 ${x}`), ...['A', 'B'].map((x) => `렌터카 ${x}`), '항공 A', '용품 A',
+]
+export const PAY_KIND = ['기본 차감', '온라인', '복지카드', '복지카드(비복지)', '영수증']
+export interface UsageRow {
+  id: string; no: number; at: string; time: string; approve: string; buy: string; name: string; empNo: string; company: string
+  kind: string; biz: string; category: string; item: string; ptype: string; cancel: boolean; point: number; age: number; gender: 'M' | 'F'
+}
+export function makeUsage(key: string, year: number, n = 2400): UsageRow[] {
+  const r = rng(seedOf('usage' + key))
+  return Array.from({ length: n }, (_, i) => {
+    const d = day(year, r, 60, 200)
+    const partner = pick(r, PARTNERS)
+    const kind = weighted(r, [['온라인', 55], ['복지카드', 22], ['기본 차감', 10], ['영수증', 8], ['복지카드(비복지)', 5]])
+    const cancel = r() < 0.07
+    const amt = Math.round((20_000 + r() * 380_000) / 100) * 100
+    const card = kind.startsWith('복지카드')
+    const buy = new Date(d); buy.setDate(buy.getDate() + 2)
+    return {
+      id: `U-${pad(i + 1, 7)}`, no: n - i, at: ymd(d), time: `${pad(8 + Math.floor(r() * 14), 2)}:${pad(Math.floor(r() * 60), 2)}`,
+      approve: card ? ymd(d) : '', buy: card ? ymd(buy) : '', name: pick(r, NAMES), empNo: `E${pad(1000 + Math.floor(r() * 900), 5)}`,
+      company: company(r, 30000 + Math.floor(r() * 80)).name, kind, biz: partner.split(' ')[0], category: pick(r, ['국내 숙박', '패키지', '입장권', '체험', '렌터카', '항공권']),
+      item: `${partner} · ${pick(r, ['주말 특가', '연박 할인', '가족 패키지', '당일 체험', '왕복 항공'])}`, ptype: weighted(r, [['기본 재원', 88], ['이벤트', 12]]),
+      cancel, point: cancel ? -amt : amt, age: 20 + Math.floor(r() * 4) * 10, gender: r() < 0.55 ? 'M' : 'F',
+    }
+  })
+}
+
+/** 엑셀 업로드 검증 — 행별 오류. 올린 파일 내용과 무관하게 같은 모양을 돌려준다(목업) */
+export interface UploadIssue { row: number; col: string; value: string; msg: string }
+export function makeUploadCheck(name: string) {
+  const r = rng(seedOf(name))
+  const total = 80 + Math.floor(r() * 60)
+  const issues: UploadIssue[] = [
+    { row: 7, col: '사업자번호', value: '123-45-678', msg: '사업자번호는 10자리입니다' },
+    { row: 12, col: '상태', value: '신청완료', msg: '없는 상태입니다 — 선정완료 · 최종제출 · 참여개시 중에서 고르세요' },
+    { row: 12, col: '참여경로', value: '기타(메모)', msg: '참여경로 코드표에 없습니다' },
+    { row: 23, col: '참여인원', value: '-3', msg: '1 이상의 숫자여야 합니다' },
+    { row: 31, col: '기업명', value: '', msg: '필수 칸이 비어 있습니다' },
+    { row: 48, col: '사업자번호', value: '220-81-00000', msg: '이미 등록된 기업입니다(같은 사업 · 같은 연도)' },
+    { row: 64 + Math.floor(r() * 10), col: '담당자 휴대폰', value: '010-12-3456', msg: '휴대폰 번호 형식이 아닙니다' },
+  ]
+  return { total, issues, badRows: new Set(issues.map((x) => x.row)).size }
+}
+
 /* --- 메인 배너 --------------------------------------------------------- */
 export interface Banner { id: string; slot: string; order: number; title: string; link: string; from: string; to: string; show: boolean; tint: string }
 export function makeBanners(): Banner[] {

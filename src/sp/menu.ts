@@ -25,7 +25,7 @@ export const SP_MENU: MenuItem[] = [
       { id: 'intake', label: '접수·자격심사', to: '/sp/intake', count: 18, asis: ['S-003-02'], built: true },
       { id: 'basic', label: '기초정보 심사', to: '/sp/basic-info', count: 42, asis: ['S-003-04', 'S-003-10'], built: true, note: 'RPA 사본은 라벨만 달랐다(선정완료 → 신청완료, 미체결 → 미제출) — 정본 라벨로 합친다' },
       { id: 'company', label: '참여 기업 관리', to: '/sp/company', asis: ['S-003-05', 'S-003-12'], built: true, note: '참여개시·인원변경·승인취소·에스크로. RPA 축소판(상태 2종)을 합친다' },
-      { id: 'upload', label: '참여 기업 등록', to: p('upload'), asis: ['S-003-14'] },
+      { id: 'upload', label: '참여 기업 등록', to: '/sp/upload', asis: ['S-003-14'], built: true },
       { id: 'cancel', label: '일괄 참여 취소', to: '/sp/bulk-cancel', asis: ['S-003-15'], built: true },
     ],
   },
@@ -42,9 +42,9 @@ export const SP_MENU: MenuItem[] = [
   {
     id: 'worker', label: '근로자·포인트', icon: 'users',
     children: [
-      { id: 'member', label: '참여회원 현황', to: p('member'), asis: ['S-003-07', 'S-003-11'], note: 'RPA 사본의 성별·외부기관 연계 필터를 상세조회로 흡수한다' },
-      { id: 'point', label: '포인트 조회', to: p('point'), asis: ['S-004-01'] },
-      { id: 'usage', label: '이용내역 조회', to: p('usage'), asis: ['S-004-02'] },
+      { id: 'member', label: '참여회원 현황', to: '/sp/member', asis: ['S-003-07', 'S-003-11'], built: true, note: 'RPA 사본의 성별·외부기관 연계 필터를 상세조회로 흡수한다' },
+      { id: 'point', label: '포인트 조회', to: '/sp/point', asis: ['S-004-01'], built: true },
+      { id: 'usage', label: '이용내역 조회', to: '/sp/usage', asis: ['S-004-02'], built: true, note: 'AS-IS의 주민번호 검색은 뺐다 — 이름 · 사번으로 찾는다(결정 필요)' },
       { id: 'period', label: '포인트 사용기간', to: p('period'), asis: ['S-003-13'] },
     ],
   },
@@ -74,7 +74,7 @@ export const SP_MENU: MenuItem[] = [
     id: 'stat', label: '통계·리포트', icon: 'chart',
     children: [
       { id: 'dreport', label: '일일 리포트', to: '/sp/daily-report', asis: ['S-006-04'], built: true },
-      { id: 'assembly', label: '국회요구자료', to: p('assembly'), asis: ['S-006-05'] },
+      { id: 'assembly', label: '국회요구자료', to: '/sp/assembly', asis: ['S-006-05'], built: true },
       { id: 'corpstat', label: '기업 세부현황', to: p('corpstat'), asis: ['S-006-02'] },
       { id: 'memstat', label: '회원 세부현황', to: p('memstat'), asis: ['S-006-03'] },
       { id: 'stopstat', label: '이용정지 통계', to: p('stopstat'), asis: ['S-006-06'] },

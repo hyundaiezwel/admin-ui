@@ -24,6 +24,9 @@ import { prefs, type Theme } from '../app/theme'
 import AppIcon from '../app/AppIcon.vue'
 import TabBar from '../app/TabBar.vue'
 import Toast from 'primevue/toast'
+// 세션 알림도 늦게 싣는다 — Dialog가 첫 로드에 끌려와 67 → 80KB가 됐다. 만료 시각은 session.ts가 들고 있어 늦게 떠도 맞다
+const SessionGuard = defineAsyncComponent(() => import('../app/SessionGuard.vue'))
+import { previewExpiry } from '../app/session'
 
 const route = useRoute()
 const router = useRouter()
@@ -103,6 +106,7 @@ const meItems = computed(() => [
     })),
   },
   { separator: true },
+  { label: '세션 만료 알림 보기(미리보기)', command: previewExpiry },
   { label: '로그아웃', command: () => router.push('/login') },
 ])
 </script>
@@ -235,6 +239,7 @@ const meItems = computed(() => [
     </div>
     <!-- role=status — 읽고 있던 문장을 끊지 않고 다음에 읽어 준다 -->
     <Toast position="bottom-center" />
+    <SessionGuard />
   </div>
 </template>
 

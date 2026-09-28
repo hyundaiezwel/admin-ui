@@ -24,7 +24,7 @@ const visible = defineModel<boolean>('visible', { required: true })
         <div><dt>처리 실패</dt><dd :class="{ 'is-bad': fails.some((f) => f.kind === 'process') }">{{ fails.filter((f) => f.kind === 'process').length }}</dd></div>
         <div><dt>통지 실패 <small>(상태는 바뀜)</small></dt><dd :class="{ 'is-warn': fails.some((f) => f.kind === 'notice') }">{{ fails.filter((f) => f.kind === 'notice').length }}</dd></div>
       </dl>
-      <p v-if="skipped" class="ws-desc">실행 전에 뺀 곳 {{ skipped.toLocaleString('ko-KR') }} — 상태가 맞지 않아 대상에 넣지 않았다(실패 아님)</p>
+      <p v-if="skipped" class="ws-desc">실행 전에 뺀 곳 {{ skipped.toLocaleString('ko-KR') }} — 확인 단계에서 이미 보인 대상이라 실패로 세지 않는다</p>
       <table v-if="fails.length" class="ws-gtb">
         <caption class="rs__cap">실패 목록</caption>
         <thead><tr><th scope="col">대상</th><th scope="col">구분</th><th scope="col">사유</th></tr></thead>

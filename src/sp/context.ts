@@ -31,6 +31,7 @@ const NEED: Record<string, number> = {
   'bulk-cancel': 4,   // 비가역 대량 처리 — 사업총괄만
   suspend: 2,         // 이용정지 — 지원담당 이상
   'bulk-send': 2,     // LMS·E-Mail 일괄 발송
+  'bulk-refund': 3,   // 일괄 환불요청 — 금전 처리라 지원총괄 이상
 }
 const rank = () => ROLES.find((r) => r.code === ctx.role)?.rank ?? 1
 export const can = (action: keyof typeof NEED | string) => rank() >= (NEED[action] ?? 1)
