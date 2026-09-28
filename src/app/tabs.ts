@@ -1,6 +1,6 @@
 import { reactive, readonly } from 'vue'
 import type { Router } from 'vue-router'
-import { titleOf } from './menu'
+import { SYSTEMS, systemOf, titleOf, type SystemDef } from './menu'
 
 /**
  * 멀티 탭 상태.
@@ -17,33 +17,45 @@ export interface Tab {
   fixed?: boolean
 }
 
-const state = reactive<{ items: Tab[]; active: string }>({
-  items: [{ path: '/', title: '대시보드', fixed: true }],
+/**
+ * 탭 목록은 **시스템마다 따로** 둔다. 샘플 화면과 지원 사업 미리보기를 오가도 각자 열어 둔
+ * 탭이 남는다. 고정 탭은 그 시스템의 첫 화면이다.
+ */
+const home = (sys: SystemDef): Tab => ({ path: sys.home, title: titleOf(sys.home), fixed: true })
+const state = reactive<{ lists: Record<string, Tab[]>; sys: string; active: string }>({
+  lists: Object.fromEntries(SYSTEMS.map((s) => [s.id, [home(s)]])),
+  sys: 'sample',
   active: '/',
 })
+const list = () => state.lists[state.sys]
 
-export const tabs = readonly(state)
+export const tabs = readonly({
+  get items() { return list() },
+  get active() { return state.active },
+})
 
 export function open(path: string) {
-  if (!state.items.some((t) => t.path === path)) {
-    state.items.push({ path, title: titleOf(path) })
+  state.sys = systemOf(path).id
+  if (!list().some((t) => t.path === path)) {
+    list().push({ path, title: titleOf(path) })
   }
   state.active = path
 }
 
 export function close(path: string, router: Router) {
-  const i = state.items.findIndex((t) => t.path === path)
-  if (i < 0 || state.items[i].fixed) return
-  state.items.splice(i, 1)
+  const items = list()
+  const i = items.findIndex((t) => t.path === path)
+  if (i < 0 || items[i].fixed) return
+  items.splice(i, 1)
   // 닫은 탭이 현재 탭이면 **왼쪽 탭**으로 간다. 오른쪽으로 보내면 방금 연 탭으로 튀어
   // 사용자가 어디로 갔는지 놓친다
   if (state.active === path) {
-    const next = state.items[Math.max(0, i - 1)]
+    const next = items[Math.max(0, i - 1)]
     router.push(next.path)
   }
 }
 
 export function closeOthers(path: string, router: Router) {
-  state.items = state.items.filter((t) => t.fixed || t.path === path)
+  state.lists[state.sys] = list().filter((t) => t.fixed || t.path === path)
   if (state.active !== path) router.push(path)
 }

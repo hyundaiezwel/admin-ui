@@ -13,10 +13,12 @@
  * 접으면 64px 레일(240 ÷ 3.75 — 참조 비율). 라벨을 자르지 않고, 하위는 펼침 메뉴로 낸다.
  * 색은 원본 관리자센터 레일(#2a403d)이다. 두 테마 모두 어둡다.
  */
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Menu from 'primevue/menu'
-import { MENU, MENU_FOOT, groupCount, type MenuItem } from '../app/menu'
+import { SYSTEMS, systemOf, groupCount, type MenuItem } from '../app/menu'
+// 지원 사업에서만 쓴다 — 정적으로 물면 Select · Popover가 첫 로드에 실린다(61 → 94KB 실측)
+const SpContext = defineAsyncComponent(() => import('../sp/SpContext.vue'))
 import { open as openTab } from '../app/tabs'
 import { prefs, type Theme } from '../app/theme'
 import AppIcon from '../app/AppIcon.vue'
@@ -30,6 +32,10 @@ const KEY = 'ds3-rail'
 const rail = ref((() => { try { return localStorage.getItem(KEY) === '1' } catch { return false } })())
 watch(rail, (v) => { try { localStorage.setItem(KEY, v ? '1' : '0') } catch { /* 이번 방문만 */ } })
 
+/** 지금 셸이 싣고 있는 시스템 — 주소가 정한다 */
+const sys = computed(() => systemOf(route.path))
+const MENU_ = computed(() => sys.value.menu)
+
 const expanded = ref<Set<string>>(new Set())
 const flyout = ref<string | null>(null)
 const q = ref('')
@@ -39,7 +45,7 @@ watch(
   () => route.path,
   (p) => {
     openTab(p)
-    const top = MENU.find((m) => m.children?.some((c) => c.to === p))
+    const top = systemOf(p).menu.find((m) => m.children?.some((c) => c.to === p || p.startsWith(c.to + '/')))
     if (top) expanded.value = new Set([...expanded.value, top.id])
     flyout.value = null
   },
@@ -47,7 +53,9 @@ watch(
 )
 
 const isActive = (m: MenuItem) => m.to === route.path
-const within = (m: MenuItem) => m.children?.some((c) => c.to === route.path) ?? false
+/** 상세 화면(`/sp/basic-info/C-0001`)에 있어도 부모 메뉴가 켜져 있어야 한다 */
+const isOn = (c: MenuItem) => c.to === route.path || (!!c.to && c.to !== '/sp' && route.path.startsWith(c.to + '/'))
+const within = (m: MenuItem) => m.children?.some(isOn) ?? false
 function toggle(m: MenuItem) {
   const s = new Set(expanded.value)
   s.has(m.id) ? s.delete(m.id) : s.add(m.id)
@@ -57,7 +65,7 @@ function toggle(m: MenuItem) {
 /** 검색하면 1depth 경계를 무시하고 잎만 보여 준다 */
 const hits = computed(() => {
   if (!q.value.trim()) return null
-  return MENU.flatMap((m) => (m.children ?? [m]).filter((c) => c.to && c.label.includes(q.value.trim())).map((c) => ({ ...c, group: m.label })))
+  return MENU_.value.flatMap((m) => (m.children ?? [m]).filter((c) => c.to && c.label.includes(q.value.trim())).map((c) => ({ ...c, group: m.label })))
 })
 
 /** 레일에서 검색을 누르면 펼치고 검색칸으로 간다 */
@@ -72,6 +80,19 @@ const fmt = (n: number) => (n > 999 ? '999+' : String(n))
 /* 사용자 메뉴 — 표시 설정이 여기 들어간다(헤더가 없으니까) */
 const me = ref<InstanceType<typeof Menu> | null>(null)
 const THEME_LABEL: Record<Theme, string> = { light: '라이트', dark: '다크', system: '시스템 설정 따르기' }
+/* 시스템 전환 — 브랜드를 누르면 뜬다. 사이드바 참조의 워크스페이스 전환 자리다 */
+const sysMenu = ref<InstanceType<typeof Menu> | null>(null)
+const sysItems = computed(() => [
+  {
+    label: '시스템',
+    items: SYSTEMS.map((s) => ({
+      label: s.id === 'sp' ? `${s.label} (미리보기)` : s.label,
+      icon: sys.value.id === s.id ? 'ws-check' : 'ws-blank',
+      command: () => router.push(s.home),
+    })),
+  },
+])
+
 const meItems = computed(() => [
   {
     label: '화면 테마',
@@ -92,10 +113,16 @@ const meItems = computed(() => [
 
     <nav class="sd" aria-label="주 메뉴">
       <div class="sd__top">
-        <RouterLink to="/" class="sd__brand" :aria-label="rail ? '관리자센터 — 대시보드' : undefined">
-          <span class="sd__logo" aria-hidden="true">EZ</span>
-          <span v-if="!rail" class="sd__name">관리자센터</span>
-        </RouterLink>
+        <button type="button" class="sd__brand" aria-haspopup="menu" :aria-label="`${sys.label} — 시스템 전환`" @click="(e) => sysMenu?.toggle(e)">
+          <span class="sd__logo" aria-hidden="true">{{ sys.id === 'sp' ? '휴' : 'EZ' }}</span>
+          <span v-if="!rail" class="sd__name">{{ sys.label }}</span>
+          <AppIcon v-if="!rail" name="chevron" :size="14" class="sd__sys" />
+        </button>
+        <Menu ref="sysMenu" :model="sysItems" popup>
+          <template #itemicon="{ item }">
+            <span class="me-ic" aria-hidden="true">{{ item.icon === 'ws-check' ? '✓' : '' }}</span>
+          </template>
+        </Menu>
         <button type="button" class="sd__fold" :aria-label="rail ? '메뉴 펼치기' : '메뉴 접기'" :aria-expanded="!rail" @click="rail = !rail">
           <AppIcon name="side" :size="18" />
         </button>
@@ -123,10 +150,10 @@ const meItems = computed(() => [
         </ul>
 
         <ul v-else class="sd__list">
-          <li v-for="m in MENU" :key="m.id" class="sd__g" @mouseleave="flyout = null">
+          <li v-for="m in MENU_" :key="m.id" class="sd__g" @mouseleave="flyout = null">
             <RouterLink
               v-if="m.to"
-              class="sd__row" :class="{ 'is-on': isActive(m) }" :to="m.to"
+              class="sd__row" :class="{ 'is-on': isOn(m) }" :to="m.to"
               :aria-current="isActive(m) ? 'page' : undefined" :title="rail ? m.label : undefined"
               @mouseenter="flyout = null"
             >
@@ -152,7 +179,7 @@ const meItems = computed(() => [
 
             <ul v-if="!rail && m.children && expanded.has(m.id)" class="sd__sub">
               <li v-for="c in m.children" :key="c.id">
-                <RouterLink class="sd__row sd__row--sub" :class="{ 'is-on': isActive(c) }" :to="c.to!" :aria-current="isActive(c) ? 'page' : undefined">
+                <RouterLink class="sd__row sd__row--sub" :class="{ 'is-on': isOn(c) }" :to="c.to!" :aria-current="isActive(c) ? 'page' : undefined">
                   <span class="sd__lb">{{ c.label }}</span>
                   <span v-if="c.count" class="sd__cnt" :aria-label="`대기 ${c.count}건`">{{ fmt(c.count) }}</span>
                 </RouterLink>
@@ -162,7 +189,7 @@ const meItems = computed(() => [
             <!-- 레일 펼침 메뉴 — 접혀도 하위에 갈 길이 있어야 접기가 반쪽이 아니다 -->
             <div v-if="rail && m.children && flyout === m.id" class="sd__fly" role="menu" :aria-label="m.label">
               <p class="sd__fly-h">{{ m.label }}</p>
-              <RouterLink v-for="c in m.children" :key="c.id" role="menuitem" class="sd__fly-i" :class="{ 'is-on': isActive(c) }" :to="c.to!">
+              <RouterLink v-for="c in m.children" :key="c.id" role="menuitem" class="sd__fly-i" :class="{ 'is-on': isOn(c) }" :to="c.to!">
                 <span>{{ c.label }}</span><span v-if="c.count" class="sd__cnt">{{ fmt(c.count) }}</span>
               </RouterLink>
             </div>
@@ -178,7 +205,7 @@ const meItems = computed(() => [
           <span v-if="!rail" class="sd__cnt">3</span>
           <span v-else class="sd__dot" />
         </button>
-        <RouterLink v-for="f in MENU_FOOT" :key="f.id" class="sd__row" :to="f.to!" :title="rail ? f.label : undefined">
+        <RouterLink v-for="f in sys.foot" :key="f.id" class="sd__row" :to="f.to!" :title="rail ? f.label : undefined">
           <span class="sd__ic"><AppIcon :name="f.icon!" :size="20" /></span>
           <span v-if="!rail" class="sd__lb">{{ f.label }}</span>
         </RouterLink>
@@ -197,7 +224,7 @@ const meItems = computed(() => [
     </nav>
 
     <div class="sh-main">
-      <TabBar />
+      <TabBar><template v-if="sys.id === 'sp'" #end><SpContext /></template></TabBar>
       <main id="main" class="sh-scroll" tabindex="-1">
         <RouterView v-slot="{ Component }">
           <KeepAlive :max="8">
@@ -226,7 +253,10 @@ const meItems = computed(() => [
 .is-rail .sd__top { flex-direction: column; justify-content: center; gap: 2px; height: auto; padding: 8px 0; }
 .sd__brand { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--ws-text-inverse); text-decoration: none; }
 .is-rail .sd__brand { flex: none; }
-.sd__brand:hover { text-decoration: none; }
+.sd__brand { height: 40px; margin-left: -8px; padding: 0 8px; border: 0; border-radius: var(--ws-radius); background: none; font: inherit; text-align: left; cursor: pointer; }
+.sd__brand:hover { background: var(--ws-side-hover); }
+.is-rail .sd__brand { margin: 0; padding: 0 6px; }
+.sd__sys { flex: none; margin-left: auto; color: var(--ws-side-muted); }
 .sd__logo { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--ws-radius); background: var(--ws-brand); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0; }
 .sd__name { font-size: 15px; font-weight: 700; white-space: nowrap; }
 .sd__fold { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--ws-radius); background: none; color: var(--ws-side-muted); cursor: pointer; }

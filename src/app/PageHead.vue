@@ -9,9 +9,12 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { trail } from './menu'
 
+/** 상세 화면은 메뉴에 없어 제목을 화면이 준다. 경로에는 부모 메뉴를 한 칸 더 넣는다 */
+const props = defineProps<{ title?: string }>()
 const route = useRoute()
 const t = computed(() => trail(route.path))
-const title = computed(() => t.value?.leaf?.label ?? t.value?.top.label ?? '화면')
+const menuTitle = computed(() => t.value?.leaf?.label ?? t.value?.top.label ?? '화면')
+const title = computed(() => props.title ?? menuTitle.value)
 
 // 원본의 "마이메뉴 등록" · "화면 잠금" 칩. 목업이라 상태만 뒤집는다
 const fav = ref(false)
@@ -34,6 +37,7 @@ const locked = ref(false)
     <ol class="ws-pgt__crumb" aria-label="현재 위치">
       <li>홈</li>
       <li v-if="t && t.leaf">{{ t.top.label }}</li>
+      <li v-if="t?.detail">{{ menuTitle }}</li>
       <li aria-current="page">{{ title }}</li>
     </ol>
   </div>

@@ -14,7 +14,7 @@ export default defineConfig({
   server: { port: 5320 },
   /* 쓰는 PrimeVue 모듈을 미리 묶는다. 안 하면 화면을 처음 열 때마다 Vite가 새 모듈을 묶으며
      페이지를 새로고침한다 — 옮겨 다니다 입력한 값이 날아간다(실측: selectbutton, datepicker…) */
-  optimizeDeps: { include: ['primevue/autocomplete','primevue/button','primevue/checkbox','primevue/config','primevue/datepicker','primevue/dialog','primevue/drawer','primevue/fileupload','primevue/inputnumber','primevue/inputtext','primevue/menu','primevue/multiselect','primevue/password','primevue/progressbar','primevue/radiobutton','primevue/select','primevue/selectbutton','primevue/tab','primevue/tablist','primevue/tabpanel','primevue/tabpanels','primevue/tabs','primevue/textarea','primevue/toast','primevue/toasteventbus','primevue/toastservice','primevue/tooltip', '@primevue/themes', '@primevue/themes/aura'] },
+  optimizeDeps: { include: ['primevue/autocomplete','primevue/button','primevue/checkbox','primevue/config','primevue/datepicker','primevue/dialog','primevue/drawer','primevue/fileupload','primevue/inputnumber','primevue/inputtext','primevue/menu','primevue/multiselect','primevue/paginator','primevue/password','primevue/popover','primevue/toggleswitch','primevue/progressbar','primevue/radiobutton','primevue/select','primevue/selectbutton','primevue/tab','primevue/tablist','primevue/tabpanel','primevue/tabpanels','primevue/tabs','primevue/textarea','primevue/toast','primevue/toasteventbus','primevue/toastservice','primevue/tooltip', '@primevue/themes', '@primevue/themes/aura'] },
   build: {
     rollupOptions: {
       output: {

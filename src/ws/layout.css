@@ -158,3 +158,51 @@
 .ws-pgt-row > .ws-pgt { flex: 1; min-width: 0; }
 .ws-page > .ws-pgt-row + * { margin-top: 18px; }
 .ws-page--canvas > .ws-pgt-row .p-togglebutton:not(.p-togglebutton-checked) { border-color: var(--ws-field-border-canvas); }
+
+/* =============================================================================
+ * 지원 사업 미리보기에서 나온 블록 — AS-IS 패턴 중 DS에 없던 것
+ * ========================================================================== */
+
+/* 2단 머리글 집계표 — `.ws-gtb` 위에 얹는다. AS-IS 접수 파이프라인(16지표) · 교차표 · 잔여금(12열)
+   `.g`는 묶음의 첫 칸이다. 묶음 경계를 굵은 선으로 갈라 12열을 넷씩 읽게 한다 */
+.ws-xscroll { overflow-x: auto; }
+.ws-gtb thead tr + tr th { border-top: 0; }
+.ws-gtb th.g, .ws-gtb td.g { border-left: 2px solid var(--ws-border-strong); }
+.ws-gtb tbody th[scope='row'] { height: var(--ws-grid-row-h); padding: 5px 10px; background: var(--ws-surface-head); font-weight: 500; white-space: nowrap; border-right: 1px solid var(--ws-border); }
+.ws-gtb tr.is-total th, .ws-gtb tr.is-total td { font-weight: 700; background: var(--ws-surface-sunken); }
+.ws-gtb tr.is-ctx th[scope='row'] { box-shadow: inset 3px 0 0 var(--ws-action-search); }
+
+/* 숫자 칸을 누르면 그 조건의 목록으로 간다. 0은 갈 곳이 없어 글자로 둔다 */
+.ws-cell-link {
+  padding: 0; border: 0; background: none; color: var(--ws-text-link); font: inherit; font-variant-numeric: tabular-nums;
+  text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; cursor: pointer;
+}
+.ws-cell-link:hover { text-decoration-color: currentColor; }
+.ws-cell-link:focus-visible { outline: none; box-shadow: var(--ws-focus-ring); border-radius: 2px; }
+.ws-cell-zero { color: var(--ws-text-muted); }
+
+/* 집계 기준 — 실시간인지 배치인지. AS-IS는 일일 리포트에만 빨간 안내문으로 적었다(D-10) */
+.ws-fresh {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
+  border: 1px solid var(--ws-border); border-radius: var(--ws-radius-pill);
+  color: var(--ws-text-sub); font-size: var(--ws-font-size-sm); white-space: nowrap;
+}
+.ws-fresh::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ws-text-muted); }
+.ws-fresh--live::before { background: var(--ws-text-success); }
+.ws-fresh--batch::before { background: var(--ws-text-warning); }
+
+/* 안내 상자 — 본문 글자 사이에 섞이면 안 되는 문장. 통지 · 경고 · 되돌릴 수 없음 */
+.ws-callout { padding: 12px 16px; border-radius: var(--ws-radius); background: var(--ws-surface-info); color: var(--ws-text); line-height: 1.5; }
+.ws-callout b { color: var(--ws-text-link); }
+.ws-callout--warn { background: var(--ws-surface-warning); }
+.ws-callout--warn b { color: var(--ws-text-warning); }
+.ws-callout--danger { background: var(--ws-surface-danger); }
+.ws-callout--danger b { color: var(--ws-text-danger); }
+
+/* 긴 화면의 하단 버튼줄 — 화면 끝까지 내리지 않아도 저장이 보인다 */
+.ws-actionbar {
+  position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: flex-end; gap: var(--ws-gap-adjacent);
+  margin-inline: calc(var(--ws-page-pad-x, 48px) * -1); padding: 12px var(--ws-page-pad-x, 48px);
+  border-top: 1px solid var(--ws-border); background: var(--ws-surface);
+}
+.ws-actionbar__l { margin-right: auto; display: flex; align-items: center; gap: var(--ws-gap-inter); color: var(--ws-text-sub); }
