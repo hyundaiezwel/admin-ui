@@ -177,6 +177,10 @@
   --ws-side-line: rgb(255 255 255 / 0.1);
   --ws-side-search-bg: #2d3843;
   --ws-side-avatar: #3e5754;
+  /* 스크롤바 — 트랙은 비우고(투명) 손잡이만 그린다. 손잡이는 바탕과 3:1(비텍스트) */
+  --ws-scroll-thumb: #8a939b;
+  --ws-scroll-thumb-hover: #6f787f;
+  --ws-side-scroll-thumb: #7d9591;
 
   /* 로그인 — 배경은 원본 login_bg.svg. 아래 색은 이미지가 늦게 뜰 때의 바탕이다 */
   --ws-login-bg: #1b2a28;
@@ -221,6 +225,8 @@
   --ws-text-warning: #f0b95c;
 
   --ws-canvas: #14181b;
+  --ws-scroll-thumb: #66717a;
+  --ws-scroll-thumb-hover: #808b93;
   --ws-surface: #1b2024;
   --ws-surface-head: #252c31;
   --ws-surface-sunken: #171b1e;

@@ -64,6 +64,9 @@ const PAIRS = [
   // 건수 배지 — 위험색 바탕 흰 글자
   ['--ws-text-inverse', '--ws-count-bg', TEXT],
   ['--ws-text-inverse', '--ws-action-danger', TEXT],
+  // 스크롤바 손잡이 — 비텍스트 3:1. 사이드바는 어두운 레일 위
+  ['--ws-scroll-thumb', '--ws-surface', UI],
+  ['--ws-side-scroll-thumb', '--ws-side-bg', UI],
   ['--ws-text-inverse', '--ws-action-danger-hover', TEXT],
   ['--ws-login-fg', '--ws-login-bg', TEXT],
   // 사이드바 — 두 테마 모두 어두운 면

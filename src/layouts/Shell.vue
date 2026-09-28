@@ -274,7 +274,8 @@ const meItems = computed(() => [
 .sd__q input:focus { outline: none; }
 .sd__q:focus-within { box-shadow: 0 0 0 1px var(--ws-side-muted); }
 
-.sd__nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: visible; padding: 4px 8px; }
+.sd__nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: visible; padding: 4px 8px; scrollbar-color: var(--ws-side-scroll-thumb) transparent; }
+.sd__nav::-webkit-scrollbar-thumb { background-color: var(--ws-side-scroll-thumb); }
 .sd__list { display: flex; flex-direction: column; gap: var(--ws-space-0-5, 2px); }
 .sd__g { position: relative; }
 
