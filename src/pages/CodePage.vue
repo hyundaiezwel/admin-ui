@@ -11,6 +11,8 @@ import { computed, onMounted, ref } from 'vue'
 import PageHead from '../app/PageHead.vue'
 import QueryState from '../app/QueryState.vue'
 import WsSearch from '../ws/WsSearch.vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
 import { badgeClass } from '../ws/badge'
 import { useMockQuery, ERROR_KEYWORD } from '../app/useMockQuery'
 
@@ -58,7 +60,7 @@ const details = computed(() => DETAILS[selected.value.code] ?? [])
     <WsSearch :cols="['72px', '', '', '', '', '']" @search="reload" @reset="keyword = ''; reload()">
       <tr>
         <th scope="row"><label for="c-kw">검색어</label></th>
-        <td><input id="c-kw" v-model="keyword" class="ws-input" placeholder="그룹명 또는 코드" /></td>
+        <td><InputText id="c-kw" v-model="keyword" fluid placeholder="그룹명 또는 코드" /></td>
         <td colspan="4" />
       </tr>
     </WsSearch>
@@ -67,7 +69,7 @@ const details = computed(() => DETAILS[selected.value.code] ?? [])
       <section class="ws-sec">
         <div class="ws-tit">
           <div class="ws-tit__l"><h2 class="ws-tit__h">코드 그룹</h2><span class="ws-total">총<strong>{{ groups.length }}</strong>건</span></div>
-          <div class="ws-tit__r"><button type="button" class="ws-btn ws-btn--pri">그룹 추가</button></div>
+          <div class="ws-tit__r"><Button label="그룹 추가" severity="contrast" /></div>
         </div>
         <QueryState :loading="loading" :error="error" :empty="groups.length === 0" :lines="6" @retry="reload">
           <table class="ws-gtb">
@@ -89,7 +91,7 @@ const details = computed(() => DETAILS[selected.value.code] ?? [])
       <section class="ws-sec">
         <div class="ws-tit">
           <div class="ws-tit__l"><h2 class="ws-tit__h">{{ selected.name }}</h2><span class="code">{{ selected.code }}</span></div>
-          <div class="ws-tit__r"><button type="button" class="ws-btn ws-btn--line">코드 추가</button></div>
+          <div class="ws-tit__r"><Button label="코드 추가" severity="secondary" outlined class="ws-line" /></div>
         </div>
         <table v-if="details.length" class="ws-gtb">
           <caption class="ws-sr-only">{{ selected.name }} 하위 코드</caption>

@@ -1,90 +1,20 @@
 /* =============================================================================
- * 컨트롤 — 네이티브 요소에 클래스만 입힌다.
+ * 컨트롤 보조 — PrimeVue가 맡지 않는 것만 남긴다.
  *
- * 원본도 대부분 네이티브다. `xf:select1`은 `div.w2selectbox_native > select`로 펼쳐지고,
- * `xf:input`은 그냥 `input.w2input`이다. 네이티브는 키보드·IME·스크린리더·모바일 동작을
- * 이미 갖고 있어서, 래퍼 컴포넌트를 만들면 그걸 다시 짜는 일이 된다.
- *
- * 치수는 전부 원본 실측이다 — 높이 32 · 모서리 6 · 글자 14.
+ * 입력·선택·버튼·세그먼트는 PrimeVue다(D1 = B). DS2에서 가져온 네이티브 클래스
+ * `.ws-btn` · `.ws-input` · `.ws-select` · `.ws-seg` 등은 지웠다 — 두 벌이 있으면
+ * 화면마다 어느 쪽을 쓸지 고르게 되고, 높이 32를 두 군데서 지켜야 한다.
  * ========================================================================== */
 
-/* --- 버튼  (원본 .btn_cm) -------------------------------------------------- */
-.ws-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-  height: var(--ws-control-h); padding: 0 16px;
-  border: 1px solid var(--ws-action-default-border); border-radius: var(--ws-radius);
-  background: var(--ws-action-default-bg); color: var(--ws-action-default-fg);
-  font-size: var(--ws-font-size); font-weight: 600; white-space: nowrap;
-  cursor: pointer; text-decoration: none;
-}
-.ws-btn:hover { border-color: var(--ws-field-border); text-decoration: none; }
-.ws-btn:disabled, .ws-btn[aria-disabled='true'] { cursor: not-allowed; color: var(--ws-text-disabled); background: var(--ws-surface-alt); border-color: var(--ws-border-light); }
-
-/* 일반 주버튼 — 저장·등록. 원본 .btn_cm.pri */
-.ws-btn--pri { background: var(--ws-action-primary); border-color: var(--ws-action-primary); color: var(--ws-text-inverse); }
-.ws-btn--pri:hover { background: var(--ws-action-primary-hover); border-color: var(--ws-action-primary-hover); }
-
-/* 조회·팝업 확인 — 원본 .shbox .btn_cm.pri. **찾기·확정에만 쓴다** */
-.ws-btn--search { background: var(--ws-action-search); border-color: var(--ws-action-search); color: var(--ws-text-inverse); }
-.ws-btn--search:hover { background: var(--ws-action-search-hover); border-color: var(--ws-action-search-hover); }
-
-/* 보조 — 원본 .btn_cm.sec */
-.ws-btn--sec { background: var(--ws-action-sub); border-color: var(--ws-action-sub); color: var(--ws-text-inverse); }
-.ws-btn--sec:hover { background: var(--ws-action-sub-hover); border-color: var(--ws-action-sub-hover); }
-
-/* 윤곽 알약 — 그리드 제목줄의 CSV다운·행추가·행삭제 */
-.ws-btn--line { border-radius: var(--ws-radius-pill); font-weight: 400; color: var(--ws-text-sub); }
-
-/* 위험 — 원본에 전용 버튼이 없다. 삭제 확인에만 쓴다 */
-.ws-btn--danger { background: var(--ws-surface); border-color: var(--ws-text-danger); color: var(--ws-text-danger); }
-.ws-btn--danger:hover { background: var(--ws-surface-danger-hover); }
-
-.ws-btn--sm { height: var(--ws-control-h-sm); padding: 0 12px; font-size: var(--ws-font-size-sm); font-weight: 400; border-radius: var(--ws-radius-xs); }
-.ws-btn--icon { width: var(--ws-control-h); padding: 0; }
-
-/* --- 입력  (원본 .w2input) ------------------------------------------------- */
-.ws-input, .ws-select, .ws-textarea {
-  width: 100%; height: var(--ws-control-h); padding: 0 6px;
-  border: 1px solid var(--ws-field-border); border-radius: var(--ws-radius);
-  background: var(--ws-surface); color: var(--ws-text); font-size: var(--ws-font-size);
-}
-.ws-input::placeholder, .ws-textarea::placeholder { color: var(--ws-text-muted); }
-.ws-input:focus, .ws-select:focus, .ws-textarea:focus { outline: none; border-color: var(--ws-field-border-focus); box-shadow: 0 0 0 1px var(--ws-field-border-focus); }
-/* 원본 상태 클래스 w2input_readonly · w2input_disabled · w2input_error */
-.ws-input:read-only:not([type='date']) { background: var(--ws-surface-alt); }
-.ws-input:disabled, .ws-select:disabled, .ws-textarea:disabled { background: var(--ws-surface-alt); color: var(--ws-text-disabled); cursor: not-allowed; }
-.ws-input[aria-invalid='true'], .ws-select[aria-invalid='true'], .ws-textarea[aria-invalid='true'] { border-color: var(--ws-text-danger); }
-.ws-input--num { text-align: right; font-variant-numeric: tabular-nums; }
-.ws-input--auto { width: auto; }
-
 .ws-err { display: block; margin-top: 4px; color: var(--ws-text-danger); font-size: var(--ws-font-size-sm); }
-
-/* 선택 — 원본은 오른쪽 30px을 화살표 자리로 비운다 */
-.ws-select {
-  padding: 0 30px 0 10px; appearance: none; cursor: pointer;
-  background: var(--ws-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23444' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center;
-}
-
-.ws-textarea { height: auto; min-height: 88px; padding: 6px; line-height: 1.5; resize: vertical; }
-
-/* 날짜 — 원본 w2inputCalendar는 입력 + 달력 버튼이다. 네이티브 date가 둘을 다 한다 */
-.ws-input[type='date'] { width: 140px; padding-right: 4px; }
 .ws-range { display: inline-flex; align-items: center; gap: 6px; }
 
-/* --- 체크 · 라디오  (원본 .w2checkbox_item · .w2radio_item) --------------- */
-.ws-check, .ws-radio { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-.ws-check input, .ws-radio input { width: 16px; height: 16px; margin: 0; accent-color: var(--ws-action-search); cursor: pointer; }
+/* --- 체크 · 라디오 배치  (원본 .w2checkbox_item · .w2radio_item) ----------
+   상자는 PrimeVue Checkbox · RadioButton이다. 여기선 상자와 라벨의 간격만 준다 */
+.ws-check, .ws-radio { display: inline-flex; align-items: center; gap: 6px; }
+.ws-check label, .ws-radio label { cursor: pointer; }
 .ws-choices { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .ws-choices--v { flex-direction: column; }
-
-/* 라디오를 버튼처럼 — 기간 선택(7일·14일·30일) */
-.ws-seg { display: inline-flex; border: 1px solid var(--ws-field-border); border-radius: var(--ws-radius); overflow: hidden; }
-.ws-seg label { position: relative; }
-.ws-seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.ws-seg span { display: grid; place-items: center; height: 30px; padding: 0 12px; color: var(--ws-text-sub); }
-.ws-seg label + label span { border-left: 1px solid var(--ws-border); }
-.ws-seg input:checked + span { background: var(--ws-action-primary); color: var(--ws-text-inverse); font-weight: 600; }
-.ws-seg input:focus-visible + span { box-shadow: inset var(--ws-focus-ring); }
 
 /* --- 뱃지  (원본 .badge) --------------------------------------------------- */
 .ws-badge {
@@ -99,21 +29,6 @@
 .ws-badge--info { background: var(--ws-surface-info); color: var(--ws-text-link); }
 .ws-badge--warning { background: var(--ws-surface-warning); color: var(--ws-text-warning); }
 .ws-badge--mute { background: var(--ws-surface-alt); color: var(--ws-text-muted); }
-
-/* --- 파일 ------------------------------------------------------------------ */
-.ws-file { display: inline-flex; align-items: center; gap: 8px; }
-.ws-file input[type='file'] { font-size: var(--ws-font-size-sm); }
-.ws-file input[type='file']::file-selector-button {
-  height: var(--ws-control-h); margin-right: 8px; padding: 0 16px;
-  border: 1px solid var(--ws-action-default-border); border-radius: var(--ws-radius);
-  background: var(--ws-surface); color: var(--ws-text-sub); font-weight: 600; cursor: pointer;
-}
-
-/* --- 진행 ------------------------------------------------------------------ */
-.ws-progress { width: 100%; height: 6px; border: 0; border-radius: 3px; background: var(--ws-surface-alt); appearance: none; }
-.ws-progress::-webkit-progress-bar { background: var(--ws-surface-alt); border-radius: 3px; }
-.ws-progress::-webkit-progress-value { background: var(--ws-action-search); border-radius: 3px; }
-.ws-progress::-moz-progress-bar { background: var(--ws-action-search); border-radius: 3px; }
 
 /* --- 빈 상태 --------------------------------------------------------------- */
 .ws-empty { display: grid; place-items: center; gap: 6px; padding: 48px 16px; color: var(--ws-text-muted); text-align: center; }

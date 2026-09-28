@@ -11,6 +11,10 @@ import PageHead from '../app/PageHead.vue'
 import QueryState from '../app/QueryState.vue'
 import TabGrid from '../grid/TabGrid.vue'
 import WsSearch from '../ws/WsSearch.vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
+import SelectButton from 'primevue/selectbutton'
 import { notify } from '../ws/notify'
 import { badgeHtml } from '../ws/badge'
 import { useMockQuery, ERROR_KEYWORD } from '../app/useMockQuery'
@@ -19,7 +23,7 @@ import { won } from '@fixtures/rng'
 
 const SIZES = [1000, 30000, 100000, 300000]
 const size = ref(1000)
-const f = ref({ keyword: '', status: '', channel: '' })
+const f = ref<{ keyword: string; status: string | null; channel: string | null }>({ keyword: '', status: null, channel: null })
 const applied = ref({ ...f.value })
 const selectedCount = ref(0)
 
@@ -46,7 +50,7 @@ const sum = computed(() =>
 
 const money = (c: any) => won(Number(c.getValue()))
 const columns = [
-  { title: '주문번호', field: 'id', width: 128, sorter: 'string', headerFilter: 'input', frozen: true },
+  { title: '주문번호', field: 'id', width: 128, sorter: 'string', headerFilter: 'input' }, // frozen 없음 — 범위 선택(editable)과 섞이면 Tabulator가 동작을 보장하지 않는다
   { title: '주문일시', field: 'orderedAt', width: 138, sorter: 'string' },
   { title: '고객', field: 'customer', width: 90, sorter: 'string', headerFilter: 'input' },
   { title: '상품', field: 'product', minWidth: 170, sorter: 'string' },
@@ -61,7 +65,8 @@ const columns = [
 
 const grid = ref<InstanceType<typeof TabGrid> | null>(null)
 function search() { applied.value = { ...f.value }; reload() }
-function reset() { f.value = { keyword: '', status: '', channel: '' }; search() }
+function reset() { f.value = { keyword: '', status: null, channel: null }; search() }
+const SIZE_OPTS = SIZES.map((n) => ({ label: n >= 10000 ? `${n / 10000}만` : n.toLocaleString(), value: n }))
 </script>
 
 <template>
@@ -71,20 +76,14 @@ function reset() { f.value = { keyword: '', status: '', channel: '' }; search() 
     <WsSearch @search="search" @reset="reset">
       <tr>
         <th scope="row"><label for="o-kw">검색어</label></th>
-        <td><input id="o-kw" v-model="f.keyword" class="ws-input" placeholder="주문번호 · 고객 · 상품" /></td>
+        <td><InputText id="o-kw" v-model="f.keyword" fluid placeholder="주문번호 · 고객 · 상품" /></td>
         <th scope="row"><label for="o-st">상태</label></th>
         <td>
-          <select id="o-st" v-model="f.status" class="ws-select">
-            <option value="">전체</option>
-            <option v-for="s in ORDER_STATUS" :key="s">{{ s }}</option>
-          </select>
+          <Select v-model="f.status" input-id="o-st" :options="[...ORDER_STATUS]" placeholder="전체" show-clear fluid />
         </td>
         <th scope="row"><label for="o-ch">채널</label></th>
         <td>
-          <select id="o-ch" v-model="f.channel" class="ws-select">
-            <option value="">전체</option>
-            <option v-for="c in ORDER_CHANNELS" :key="c">{{ c }}</option>
-          </select>
+          <Select v-model="f.channel" input-id="o-ch" :options="[...ORDER_CHANNELS]" placeholder="전체" show-clear fluid />
         </td>
       </tr>
     </WsSearch>
@@ -98,14 +97,9 @@ function reset() { f.value = { keyword: '', status: '', channel: '' }; search() 
         </div>
         <div class="ws-tit__r">
           <span id="o-size" class="ws-desc">데이터 규모</span>
-          <div class="ws-seg" role="radiogroup" aria-labelledby="o-size">
-            <label v-for="n in SIZES" :key="n">
-              <input v-model="size" type="radio" name="o-size" :value="n" />
-              <span>{{ n >= 10000 ? `${n / 10000}만` : n.toLocaleString() }}</span>
-            </label>
-          </div>
+          <SelectButton v-model="size" :options="SIZE_OPTS" option-label="label" option-value="value" :allow-empty="false" aria-labelledby="o-size" />
           <span class="ws-sep" aria-hidden="true" />
-          <button type="button" class="ws-btn ws-btn--line" @click="grid?.exportCsv('orders.csv'); notify('조회 결과 전체를 내려받습니다')">엑셀 내려받기</button>
+          <Button label="엑셀 내려받기" severity="secondary" outlined class="ws-line" @click="grid?.exportCsv('orders.csv'); notify('조회 결과 전체를 내려받습니다')" />
         </div>
       </div>
 

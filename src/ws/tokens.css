@@ -1,5 +1,5 @@
 /* =============================================================================
- * EZ Admin Design System 2 — 토큰
+ * EZ Admin Design System 3 — 토큰 (DS2 값 + 다크)
  * -----------------------------------------------------------------------------
  * 사내 관리자센터(WebSquare 5 BO-UI)의 퍼블리싱을 **정본**으로 삼는다.
  * 값은 전부 `ez-websquare-vue`의 원본 `cm/css/contents.css`·`base.css`에서
@@ -33,6 +33,8 @@
 
   /* --- 면 ----------------------------------------------------------------- */
   --ws-surface: #ffffff;         /* 원본 131회 — 최빈 */
+  /* 캔버스 — 대시보드·통계처럼 카드를 쓰는 화면의 바탕(D3 C). 목록·폼은 --ws-surface 위에 평면 */
+  --ws-canvas: #f5f6f8;
   --ws-surface-head: #f3f5f6;    /* 폼 라벨 칸 · 그리드 헤더 */
   --ws-surface-sunken: #f6f7f9;  /* 팝업 머리 */
   --ws-surface-raised: #fafafa;
@@ -48,6 +50,8 @@
   --ws-surface-info: #f0f6fe;
   --ws-surface-warning: #fff4e0;
   --ws-surface-danger-hover: #fff5f5;
+  /* 건수 배지 — 흰 글자가 올라간다. 위험 글자색을 빌려 쓰면 다크에서 밝아져 2.48로 떨어진다 */
+  --ws-count-bg: #dc1222;
 
   /* --- 선 -----------------------------------------------------------------
    * 둘로 가른다. **표·그리드·구분선은 장식선**이라 1.4.11 대상이 아니다 — 셀 배경과
@@ -63,6 +67,8 @@
   --ws-border-strong: #aaaaaa;   /* 입력 표 윗선 — 원본 .tb{border-top:1px solid #aaa} */
   --ws-field-border: #939393;    /* 교정 — 원본 #cccccc 1.61:1 → 3.07:1 */
   --ws-field-border-focus: #008472;
+  /* 캔버스 위에 바로 놓이는 컨트롤(대시보드 기간 선택기 등). #939393은 캔버스에서 2.84라 미달 */
+  --ws-field-border-canvas: #8a8a8a;
 
   /* --- 액션 ---------------------------------------------------------------
    * **주버튼이 둘이다.** 원본 규칙 그대로다.
@@ -72,6 +78,7 @@
    * 초록은 "찾는다·확정한다"에만 쓴다. 저장이 초록이 아닌 이유가 이것이다.
    * --------------------------------------------------------------------- */
   --ws-action-primary: #444444;       /* 흰 글자 9.74:1 */
+  --ws-action-primary-fg: #ffffff;    /* 다크에서는 저장 버튼이 밝은 회색으로 뒤집혀 글자가 어두워진다 */
   --ws-action-primary-hover: #222222;
   --ws-action-search: #008472;        /* 교정 — 원본 #009782 3.65:1 → 4.62:1 */
   --ws-action-search-hover: #006b5c;
@@ -149,6 +156,25 @@
   --ws-shell-min-w: 1210px;
   --ws-shell-min-w-open: 1000px;
 
+  /* 카드(D3 C) — 대시보드·통계 위젯에만. 목록·폼은 평면이다 */
+  --ws-card-radius: 12px;
+  --ws-card-pad: 20px 24px;
+  --ws-card-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.1);
+  --ws-card-border: transparent;
+
+  /* 사이드바(D2 A — 헤더 없는 사이드바). 원본 레일 색을 쓴다. 두 테마 모두 어둡다 */
+  --ws-side-w: 240px;
+  --ws-side-w-rail: 64px;
+  --ws-side-bg: #2a403d;
+  --ws-side-fg: #dfe7e5;
+  --ws-side-sub: #b9c4c2;
+  --ws-side-muted: #aab6b3;
+  --ws-side-on-bg: #1d2023;
+  --ws-side-hover: rgb(0 0 0 / 0.18);
+  --ws-side-line: rgb(255 255 255 / 0.1);
+  --ws-side-search-bg: #2d3843;
+  --ws-side-avatar: #3e5754;
+
   /* 로그인 — 배경은 원본 login_bg.svg. 아래 색은 이미지가 늦게 뜰 때의 바탕이다 */
   --ws-login-bg: #1b2a28;
   --ws-login-fg: #fafafa;
@@ -165,4 +191,79 @@
   --ws-chart-5: #56ccf2;
   --ws-chart-6: #eb5757;
   --ws-chart-muted: #939393;
+}
+
+/* =============================================================================
+ * 다크 — `<html data-theme="dark">`
+ * -----------------------------------------------------------------------------
+ * 원본에 다크가 없어서 여기서 새로 짠 층이다(D4, 2026-09-28 결정). 규칙 셋.
+ *   ① 색 계열은 라이트와 같다 — 초록은 초록, 링크는 파랑. 명도만 옮긴다
+ *   ② 면은 세 단계로만 쌓는다 — 캔버스 < 면 < 머리. 그림자 대신 명도로 층을 가른다
+ *   ③ 값은 전부 check:contrast를 통과해야 빌드된다 — 라이트와 같은 쌍을 다크에서도 잰다
+ * 저장 버튼(진회색)만 뒤집힌다. 어두운 바탕에 어두운 버튼은 안 보이기 때문이다.
+ * ========================================================================== */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ws-text: #e4e8eb;
+  --ws-text-sub: #c1c8ce;
+  --ws-text-muted: #98a2ab;
+  --ws-text-disabled: #6a737b;
+  --ws-text-strong: #f3f5f6;
+  --ws-text-badge: #c1c8ce;
+  --ws-text-link: #6aaeff;
+  --ws-text-brand: #4ccab4;
+  --ws-text-danger: #ff7c86;
+  --ws-text-success: #52d3a0;
+  --ws-text-warning: #f0b95c;
+
+  --ws-canvas: #14181b;
+  --ws-surface: #1b2024;
+  --ws-surface-head: #252c31;
+  --ws-surface-sunken: #171b1e;
+  --ws-surface-raised: #20262a;
+  --ws-surface-alt: #242a2f;
+  --ws-surface-badge: #2c3338;
+  --ws-surface-hover: #242b30;
+  --ws-surface-head-hover: #2c343a;
+  --ws-surface-range: #173a35;
+  --ws-surface-selected: #133530;
+  --ws-surface-danger: #3a1f23;
+  --ws-surface-success: #14302a;
+  --ws-surface-info: #172a44;
+  --ws-surface-warning: #37291a;
+  --ws-surface-danger-hover: #452328;
+  --ws-count-bg: #c62a35;
+
+  --ws-border: #3a4349;
+  --ws-border-light: #343c42;
+  --ws-border-lighter: #2b3237;
+  --ws-border-grid: #4a545b;
+  --ws-border-soft: #2e353a;
+  --ws-border-strong: #5a646c;
+  --ws-field-border: #707b83;
+  --ws-field-border-focus: #4ccab4;
+  --ws-field-border-canvas: #707b83;
+
+  --ws-action-primary: #d6dce0;
+  --ws-action-primary-hover: #eef1f3;
+  --ws-action-primary-fg: #16191c;
+  --ws-action-search: #008472;
+  --ws-action-search-hover: #006b5c;
+  --ws-action-sub: #5c666e;
+  --ws-action-sub-hover: #4d565d;
+  --ws-action-default-bg: #1b2024;
+  --ws-action-default-fg: #d5dbe0;
+  --ws-action-default-border: #4a545b;
+
+  --ws-brand-surface: #133530;
+  --ws-focus-ring: 0 0 0 2px #1b2024, 0 0 0 4px #4ccab4;
+
+  --ws-crumb: #aab3bb;
+  --ws-crumb-last: #e4e8eb;
+  --ws-chart-muted: #7d878f;
+
+  /* 어두운 바탕에서는 그림자가 안 보인다 — 선으로 가른다 */
+  --ws-card-shadow: none;
+  --ws-card-border: #2b3237;
 }

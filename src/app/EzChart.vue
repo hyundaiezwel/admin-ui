@@ -96,6 +96,10 @@ const merged = computed(() => {
     splitLine: { lineStyle: { color: line, type: 'dashed' } },
   }
 
+  // 축이 둘이면 배열이다(이중 축). 배열을 객체에 펼치면 {0:…, 1:…}이 돼 축이 사라지고
+  // "yAxis 0 not found"로 setOption이 중간에 죽는다 — 그 뒤로 이 인스턴스는 계속 "main process" 오류를 낸다
+  const withAxis = (a: any) => (a ? (Array.isArray(a) ? a.map((x) => ({ ...axis, ...x })) : { ...axis, ...a }) : undefined)
+
   return {
     color: palette,
     backgroundColor: 'transparent',
@@ -110,8 +114,8 @@ const merged = computed(() => {
     grid: { left: 48, right: 16, top: 28, bottom: 28, ...(props.option.grid ?? {}) },
     ...props.option,
     series: withSeparators(props.option.series, surface),
-    xAxis: props.option.xAxis ? { ...axis, ...props.option.xAxis } : undefined,
-    yAxis: props.option.yAxis ? { ...axis, ...props.option.yAxis } : undefined,
+    xAxis: withAxis(props.option.xAxis),
+    yAxis: withAxis(props.option.yAxis),
   }
 })
 </script>

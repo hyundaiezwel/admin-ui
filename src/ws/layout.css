@@ -134,3 +134,27 @@
 
 /* --- 차트 상자 — 그림자 없는 평면. 원본에 카드가 없다 --------------------- */
 .ws-chartbox { padding: 16px; border: 1px solid var(--ws-border); border-radius: var(--ws-radius); background: var(--ws-surface); }
+
+
+/* --- 카드 화면 (D3 C) -----------------------------------------------------
+ * 대시보드·통계처럼 **서로 독립된 위젯**이 모인 화면에만 쓴다. 목록·폼은 한 흐름이라
+ * 카드가 오히려 끊는다 — 그래서 `.ws-page--canvas`를 건 화면에서만 `.ws-card`가 산다.
+ *
+ * 규칙 하나: **입력칸은 캔버스 위에 바로 두지 않는다.** #939393은 캔버스에서 2.84로
+ * 미달이다(선택 시안 실측). 캔버스에 바로 놓이는 컨트롤은 --ws-field-border-canvas를 쓴다.
+ * ------------------------------------------------------------------------- */
+.ws-page--canvas { background: var(--ws-canvas); min-height: 100%; }
+.ws-page--canvas .ws-card {
+  padding: var(--ws-card-pad);
+  border: 1px solid var(--ws-card-border);
+  border-radius: var(--ws-card-radius);
+  background: var(--ws-surface);
+  box-shadow: var(--ws-card-shadow);
+}
+/* 캔버스에 바로 놓인 머리 컨트롤 */
+.ws-page--canvas .ws-card .ws-chartbox { padding: 0; border: 0; }
+/* 제목 영역 옆 컨트롤(기간 선택 등) — 제목 줄과 한 줄에 둔다 */
+.ws-pgt-row { display: flex; align-items: center; gap: var(--ws-gap-inter); }
+.ws-pgt-row > .ws-pgt { flex: 1; min-width: 0; }
+.ws-page > .ws-pgt-row + * { margin-top: 18px; }
+.ws-page--canvas > .ws-pgt-row .p-togglebutton:not(.p-togglebutton-checked) { border-color: var(--ws-field-border-canvas); }

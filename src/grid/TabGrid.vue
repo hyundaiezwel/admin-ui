@@ -52,8 +52,9 @@ const rowSel = createRowSelect({
   onChange: ({ count }: { count: number }) => emit('selectionChange', count),
 })
 
-/** 체크박스 컬럼을 앞에 붙인다. 컬럼 정의가 클릭 핸들러까지 들고 있어 별도 배선이 없다 */
-const withSelect = (cols: any[]) => [rowSel.column(), ...cols]
+/** 체크박스 컬럼을 앞에 붙인다. 컬럼 정의가 클릭 핸들러까지 들고 있어 별도 배선이 없다.
+ *  `paste`는 우리 키라 Tabulator에 넘기기 전에 뺀다 — 두면 컬럼마다 "Invalid column definition" 경고 */
+const withSelect = (cols: any[]) => [rowSel.column(), ...cols.map(({ paste, ...c }) => c)]
 
 onMounted(() => {
   if (!el.value) return

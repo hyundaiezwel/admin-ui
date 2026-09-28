@@ -15,11 +15,13 @@
  */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import Button from 'primevue/button'
 
 const router = useRouter()
 const base = import.meta.env.BASE_URL
 const f = ref({ domain: '', id: '', pw: '' })
-const show = ref(false)
 const error = ref('')
 const busy = ref(false)
 
@@ -43,22 +45,20 @@ function submit() {
         <ul class="lg__fields">
           <li>
             <label class="ws-sr-only" for="lg-dom">도메인</label>
-            <input id="lg-dom" v-model="f.domain" class="lg__in" placeholder="ooo.ezwel.com의 ooo을 입력" autocomplete="organization" />
+            <InputText id="lg-dom" v-model="f.domain" size="large" fluid placeholder="ooo.ezwel.com의 ooo을 입력" autocomplete="organization" />
           </li>
           <li>
             <label class="ws-sr-only" for="lg-id">아이디</label>
-            <input id="lg-id" v-model="f.id" class="lg__in" placeholder="아이디 입력" autocomplete="username" />
+            <InputText id="lg-id" v-model="f.id" size="large" fluid placeholder="아이디 입력" autocomplete="username" />
           </li>
           <li class="lg__pw">
             <label class="ws-sr-only" for="lg-pw">비밀번호</label>
-            <input id="lg-pw" v-model="f.pw" class="lg__in" :type="show ? 'text' : 'password'" placeholder="비밀번호 입력" autocomplete="current-password" />
-            <button type="button" class="lg__eye" :aria-pressed="show" :aria-label="show ? '비밀번호 숨기기' : '비밀번호 보기'" @click="show = !show">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /><path v-if="!show" d="M3 3l18 18" /></svg>
-            </button>
+            <!-- 원본 btn_pwDisp — 보기 토글. PrimeVue Password의 toggleMask가 같은 일을 한다 -->
+            <Password v-model="f.pw" input-id="lg-pw" :feedback="false" toggle-mask fluid size="large" placeholder="비밀번호 입력" :input-props="{ autocomplete: 'current-password' }" />
           </li>
           <li>
             <p v-if="error" class="ws-err" role="alert" style="margin: 0 0 8px">{{ error }}</p>
-            <button type="submit" class="lg__btn" :disabled="busy">{{ busy ? '로그인 중…' : '로그인' }}</button>
+            <Button type="submit" :label="busy ? '로그인 중…' : '로그인'" size="large" fluid :loading="busy" class="lg__btn" />
           </li>
         </ul>
       </form>
@@ -85,23 +85,7 @@ function submit() {
 .lg__tit { margin-bottom: 24px; font-size: 20px; line-height: 28px; font-weight: 700; text-align: center; }
 .lg__fields { display: flex; flex-direction: column; gap: 20px; }
 .lg__fields li:last-child { margin-top: -8px; } /* 원본 li:last-child{margin-top:12px} */
-.lg__in {
-  width: 100%; height: 40px; padding: 10px 12px;
-  border: 1px solid var(--ws-field-border); border-radius: var(--ws-radius); background: var(--ws-surface);
-}
-.lg__in::placeholder { color: var(--ws-text-muted); }
-.lg__in:hover { border-color: var(--ws-text-muted); }
-.lg__in:focus { outline: none; border-color: var(--ws-field-border-focus); box-shadow: 0 0 0 1px var(--ws-field-border-focus); }
-.lg__pw { position: relative; }
-.lg__pw .lg__in { padding-right: 44px; }
-.lg__eye { position: absolute; right: 4px; top: 4px; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--ws-radius); background: none; color: var(--ws-text-muted); cursor: pointer; }
-.lg__eye:hover { color: var(--ws-text); }
-.lg__btn {
-  width: 100%; height: 40px; border: 1px solid var(--ws-action-search); border-radius: 8px;
-  background: var(--ws-action-search); color: var(--ws-text-inverse); font-size: 15px; font-weight: 600; cursor: pointer;
-}
-.lg__btn:hover { background: var(--ws-action-search-hover); border-color: var(--ws-action-search-hover); }
-.lg__btn:disabled { opacity: 0.6; cursor: wait; }
+:deep(.lg__btn.p-button) { border-radius: 8px; } /* 원본 로그인 버튼만 모서리 8 */
 .lg__msg { margin-top: 42px; color: var(--ws-login-fg); font-size: var(--ws-font-size-md); line-height: 18px; }
 .lg__msg li { position: relative; padding-left: 10px; }
 .lg__msg li + li { margin-top: 4px; }

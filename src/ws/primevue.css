@@ -1,0 +1,52 @@
+/* =============================================================================
+ * PrimeVue 보정 — 높이 32를 맞추는 나머지 절반.
+ *
+ * Aura는 입력 글자를 토큰이 아니라 CSS에 `font-size: 1rem`으로 박는다. 그래서 크기는
+ * 프리셋(안쪽 여백 5)과 여기(글자 14 · 줄 높이 20)가 같이 맞춘다: 2 + 10 + 20 = 32.
+ *
+ * PrimeVue 스타일은 `@layer primevue` 안에 들어간다(main.ts의 cssLayer). 레이어 밖에
+ * 있는 이 규칙이 특정성과 무관하게 이긴다 — 런타임에 <head> 끝에 붙는 PrimeVue 스타일에
+ * 순서로 지지 않는다.
+ * ========================================================================== */
+.p-inputtext,
+.p-select-label,
+.p-multiselect-label,
+.p-button,
+.p-togglebutton {
+  font-size: var(--ws-font-size);
+  line-height: 20px;
+  letter-spacing: var(--ws-letter);
+}
+.p-inputtext-sm, .p-button-sm, .p-select-sm .p-select-label { font-size: var(--ws-font-size-sm); }
+.p-inputtext-lg, .p-button-lg { font-size: 15px; }
+
+/* 고른 칸은 굵게 — 색 말고 단서 하나 더 */
+.p-togglebutton-checked .p-togglebutton-label { font-weight: 600; }
+
+/* 여러 줄 입력은 줄 높이를 되돌린다 */
+.p-textarea { line-height: 1.5; }
+
+/* 원본 버튼 모양 — 윤곽 알약(CSV다운·행추가)은 글자를 가볍게 */
+.p-button.ws-line { border-radius: var(--ws-radius-pill); }
+.p-button.ws-line .p-button-label { font-weight: 400; }
+
+/* 포커스 — 우리 링을 쓴다 */
+.p-inputtext:focus-visible, .p-select.p-focus, .p-multiselect.p-focus { box-shadow: 0 0 0 1px var(--ws-field-border-focus); }
+.p-button:focus-visible { outline: none; box-shadow: var(--ws-focus-ring); }
+
+/* 팝업 머리 — 원본 w2window_header */
+.p-dialog-header { height: var(--ws-popup-head-h); background: var(--ws-surface-sunken); border-bottom: 1px solid var(--ws-border-lighter); }
+.p-dialog-title { font-size: var(--ws-font-size-lg); font-weight: 700; }
+.p-dialog-footer { justify-content: center; }
+.p-dialog-footer .p-button { min-width: 68px; }
+.p-drawer-header { height: var(--ws-popup-head-h); background: var(--ws-surface-sunken); border-bottom: 1px solid var(--ws-border-lighter); }
+.p-drawer-title { font-size: var(--ws-font-size-lg); font-weight: 700; }
+
+/* 탭 — 원본 w2tabcontrol */
+.p-tablist-tab-list { gap: 2px; }
+.p-tab { height: var(--ws-tab-h); margin-bottom: -1px; border: 1px solid transparent; border-bottom: 0; border-radius: var(--ws-radius) var(--ws-radius) 0 0; background: var(--ws-surface-head); }
+.p-tab.p-tab-active { background: var(--ws-surface); border-color: var(--ws-border-grid); font-weight: 700; }
+.p-tabpanels { padding: var(--ws-gap-region) 0 0; background: transparent; }
+
+/* 태그 — 원본 .badge 치수 */
+.p-tag { height: var(--ws-control-h-sm); padding: 0 8px; border-radius: var(--ws-radius-xs); font-size: var(--ws-font-size-md); font-weight: 500; }

@@ -119,3 +119,19 @@
 
 /* 뱃지(24px inline-flex)가 기준선에 붙으면 칸이 34.5로 반 픽셀 부푼다 — 반올림되면 행 36 */
 .ws-datagrid .tabulator-cell .ws-badge { vertical-align: top; }
+
+/* --- 기본 테마가 박아 둔 색을 토큰으로 덮는다 -------------------------------
+ * tabulator_simple은 표 본문에 #333, 범위 선택된 헤더에 #d6d6d6/#000을 박아 둔다.
+ * 라이트(흰 바탕)에서는 멀쩡해 보여 DS2에서 안 드러났고, 다크에서 글자가 사라져서
+ * 잡혔다. 특정성이 (0,4,0)이라 한 단계 위로 잡는다. */
+.ws-datagrid.tabulator .tabulator-tableholder .tabulator-table,
+.ws-datagrid.tabulator .tabulator-row,
+.ws-datagrid.tabulator .tabulator-row .tabulator-cell { color: var(--ws-text); }
+.ws-datagrid.tabulator .tabulator-header,
+.ws-datagrid.tabulator .tabulator-header .tabulator-col { color: var(--ws-text); }
+.ws-datagrid.tabulator .tabulator-header .tabulator-col.tabulator-range-highlight { background-color: var(--ws-surface-range); color: var(--ws-text); }
+.ws-datagrid.tabulator .tabulator-header .tabulator-col.tabulator-range-selected { background-color: var(--ws-action-search); color: var(--ws-text-inverse); }
+.ws-datagrid.tabulator .tabulator-row .tabulator-cell.tabulator-range-row-header.tabulator-range-highlight { background-color: var(--ws-surface-range); color: var(--ws-text); }
+.ws-datagrid.tabulator .tabulator-row .tabulator-cell.tabulator-range-row-header.tabulator-range-selected { background-color: var(--ws-action-search); color: var(--ws-text-inverse); }
+.ws-datagrid.tabulator .tabulator-tableholder { background: var(--ws-surface); }
+.ws-datagrid.tabulator .tabulator-cell.tabulator-editing input { color: var(--ws-text); }

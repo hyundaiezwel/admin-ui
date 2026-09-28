@@ -9,6 +9,7 @@
  * F2는 보이는 화면에서만 받는다(`useHotkey`).
  */
 import { ref } from 'vue'
+import Button from 'primevue/button'
 import { useHotkey } from '../app/useHotkey'
 
 const props = withDefaults(defineProps<{ cols?: string[]; title?: string }>(), {
@@ -27,11 +28,11 @@ useHotkey('F2', () => emit('search'))
     <div class="ws-tit">
       <div class="ws-tit__l"><h2 class="ws-tit__h">{{ title }}</h2></div>
       <div class="ws-tit__r">
-        <button type="button" class="ws-btn ws-btn--icon" aria-label="조건 초기화" title="초기화" @click="emit('reset')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
-        </button>
-        <button type="submit" class="ws-btn ws-btn--search">조회(F2)</button>
-        <button v-if="$slots.detail" type="button" class="ws-btn" :aria-expanded="detail" @click="detail = !detail">상세조회</button>
+        <Button type="button" severity="secondary" outlined aria-label="조건 초기화" v-tooltip.bottom="'초기화'" @click="emit('reset')">
+          <template #icon><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg></template>
+        </Button>
+        <Button type="submit" label="조회(F2)" />
+        <Button v-if="$slots.detail" type="button" severity="secondary" outlined label="상세조회" :aria-expanded="detail" @click="detail = !detail" />
       </div>
     </div>
     <div class="ws-sh__body">

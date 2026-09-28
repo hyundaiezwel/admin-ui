@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Button from 'primevue/button'
 /**
  * 조회 상태 넷 — 로딩 · 오류 · 빈 · 정상.
  *
@@ -19,7 +20,7 @@ defineEmits<{ retry: [] }>()
 <template>
   <div v-if="error" class="qs-err" role="alert">
     <p><strong>QUERY_FAILED</strong> {{ error }}</p>
-    <button type="button" class="ws-btn ws-btn--sm" @click="$emit('retry')">다시 시도</button>
+    <Button label="다시 시도" size="small" severity="secondary" outlined @click="$emit('retry')" />
   </div>
   <div v-else-if="loading" class="qs-skel" aria-busy="true" aria-label="조회 중">
     <span class="qs-skel__head" />

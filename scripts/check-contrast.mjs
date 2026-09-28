@@ -13,7 +13,13 @@ import { contrast } from './fix-contrast.mjs'
  * 막지는 않되 지우지도 않는다(@ezwel/ui v1.6.1과 같은 처리).
  */
 const css = readFileSync(fileURLToPath(new URL('../src/ws/tokens.css', import.meta.url)), 'utf8')
-const T = Object.fromEntries([...css.matchAll(/(--ws-[a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]))
+/* 블록을 갈라 읽는다. 파일 전체를 한 번에 긁으면 다크 값이 라이트를 덮어 라이트를 못 잰다 */
+const DARK = ":root[data-theme='dark']"
+const cut = css.indexOf(DARK)
+if (cut < 0) throw new Error('다크 블록을 못 찾았다 — tokens.css 셀렉터를 확인한다')
+const parse = (part) => Object.fromEntries([...part.matchAll(/(--ws-[a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]))
+const LIGHT = parse(css.slice(0, cut))
+const THEMES = { 라이트: LIGHT, 다크: { ...LIGHT, ...parse(css.slice(cut)) } }
 
 const TEXT = 4.5
 const UI = 3
@@ -35,13 +41,16 @@ const PAIRS = [
   ['--ws-text-muted', '--ws-surface-alt', TEXT],
   ['--ws-text-danger', '--ws-surface-danger-hover', TEXT],
   // 버튼 — 흰 글자가 올라가는 면
-  ['--ws-text-inverse', '--ws-action-primary', TEXT],
-  ['--ws-text-inverse', '--ws-action-primary-hover', TEXT],
+  ['--ws-action-primary-fg', '--ws-action-primary', TEXT],
+  ['--ws-action-primary-fg', '--ws-action-primary-hover', TEXT],
   ['--ws-text-inverse', '--ws-action-search', TEXT],
   ['--ws-text-inverse', '--ws-action-search-hover', TEXT],
   ['--ws-text-inverse', '--ws-action-sub', TEXT],
   ['--ws-text-inverse', '--ws-action-sub-hover', TEXT],
   ['--ws-action-default-fg', '--ws-action-default-bg', TEXT],
+  // 캔버스 — 카드를 쓰는 화면(대시보드·통계)의 바탕 위
+  ...['--ws-text', '--ws-text-sub', '--ws-text-muted'].map((fg) => [fg, '--ws-canvas', TEXT]),
+  ['--ws-field-border-canvas', '--ws-canvas', UI],
   // 컨트롤 경계 — 1.4.11
   ['--ws-field-border', '--ws-surface', UI],
   ['--ws-field-border-focus', '--ws-surface', UI],
@@ -53,8 +62,14 @@ const PAIRS = [
   ['--ws-shell-side-placeholder', '--ws-shell-side-input-bg', TEXT],
   ['--ws-text-inverse', '--ws-shell-side-input-bg', TEXT],
   // 건수 배지 — 위험색 바탕 흰 글자
-  ['--ws-text-inverse', '--ws-text-danger', TEXT],
+  ['--ws-text-inverse', '--ws-count-bg', TEXT],
   ['--ws-login-fg', '--ws-login-bg', TEXT],
+  // 사이드바 — 두 테마 모두 어두운 면
+  ['--ws-side-fg', '--ws-side-bg', TEXT],
+  ['--ws-side-sub', '--ws-side-bg', TEXT],
+  ['--ws-side-muted', '--ws-side-bg', TEXT],
+  ['--ws-text-inverse', '--ws-side-on-bg', TEXT],
+  ['--ws-shell-side-placeholder', '--ws-side-search-bg', TEXT],
   // 경로
   ['--ws-crumb', '--ws-surface', TEXT],
   ['--ws-crumb-last', '--ws-surface', TEXT],
@@ -64,26 +79,23 @@ const CHART = [1, 2, 3, 4, 5, 6, 'muted'].map((i) => [`--ws-chart-${i}`, '--ws-s
 
 let bad = 0
 let n = 0
-for (const [fg, bg, need] of PAIRS) {
-  if (!T[fg] || !T[bg]) {
-    console.error(`  토큰 없음: ${!T[fg] ? fg : bg}`)
-    bad++
-    continue
+let warns = 0
+for (const [theme, T] of Object.entries(THEMES)) {
+  let tb = 0
+  for (const [fg, bg, need] of PAIRS) {
+    if (!T[fg] || !T[bg]) { console.error(`  [${theme}] 토큰 없음: ${!T[fg] ? fg : bg}`); bad++; tb++; continue }
+    n++
+    const r = contrast(T[fg], T[bg])
+    if (r < need) { bad++; tb++; console.error(`  ✗ [${theme}] ${fg} on ${bg}  ${r.toFixed(2)} < ${need}`) }
   }
-  n++
-  const r = contrast(T[fg], T[bg])
-  if (r < need) {
-    bad++
-    console.error(`  ✗ ${fg} on ${bg}  ${r.toFixed(2)} < ${need}`)
-  }
+  const warn = CHART.filter(([fg, bg, need]) => contrast(T[fg], T[bg]) < need)
+  warns += warn.length
+  console.log(`${theme}: ${tb ? tb + '건 미달' : '통과'}${warn.length ? ` · 차트 경고 ${warn.length}건` : ''}`)
+  warn.forEach(([fg, bg, need]) => console.log(`  ⚠ ${fg} on ${bg}  ${contrast(T[fg], T[bg]).toFixed(2)} < ${need}`))
 }
-
-const warn = CHART.filter(([fg, bg, need]) => contrast(T[fg], T[bg]) < need)
-console.log(`검사 ${n}쌍 · 미달 ${bad}건 · 차트 경고 ${warn.length}건`)
-warn.forEach(([fg, bg, need]) => console.log(`  ⚠ ${fg} on ${bg}  ${contrast(T[fg], T[bg]).toFixed(2)} < ${need}`))
-if (warn.length) console.log('  차트 경고는 참조 팔레트를 톤 그대로 쓴 대가다. 면 차트는 획이 경계를 맡는다. 라이트 선 차트 셋 이상만 해당.')
-
+console.log(`검사 ${n}쌍 (라이트·다크) · 미달 ${bad}건 · 차트 경고 ${warns}건`)
+if (warns) console.log('  차트 경고는 참조 팔레트를 톤 그대로 쓴 대가다. 면 차트는 획이 경계를 맡는다. 라이트 선 차트 셋 이상만 해당.')
 if (bad) {
-  console.error('\n대비 미달. 원본 값으로 되돌렸는지 확인하고 scripts/fix-contrast.mjs로 다시 뽑는다.')
+  console.error('\n대비 미달. 값을 되돌렸는지 확인하고 scripts/fix-contrast.mjs로 다시 뽑는다.')
   process.exit(1)
 }

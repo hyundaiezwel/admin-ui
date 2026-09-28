@@ -9,7 +9,10 @@ import { onMounted, ref } from 'vue'
 import PageHead from '../app/PageHead.vue'
 import QueryState from '../app/QueryState.vue'
 import TabGrid from '../grid/TabGrid.vue'
-import WsDialog from '../ws/WsDialog.vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
+import Drawer from 'primevue/drawer'
 import WsSearch from '../ws/WsSearch.vue'
 import { badgeClass, badgeHtml } from '../ws/badge'
 import { useMockQuery, ERROR_KEYWORD } from '../app/useMockQuery'
@@ -17,7 +20,7 @@ import { makeMembers, GRADES, MEMBER_STATUS, GRADE_TONE, MEMBER_STATUS_TONE, typ
 import { won } from '@fixtures/rng'
 
 const ALL = makeMembers(1200)
-const f = ref({ keyword: '', grade: '', status: '' })
+const f = ref<{ keyword: string; grade: string | null; status: string | null }>({ keyword: '', grade: null, status: null })
 const applied = ref({ ...f.value })
 const detail = ref<Member | null>(null)
 
@@ -51,7 +54,7 @@ const columns = [
 ]
 
 function search() { applied.value = { ...f.value }; reload() }
-function reset() { f.value = { keyword: '', grade: '', status: '' }; search() }
+function reset() { f.value = { keyword: '', grade: null, status: null }; search() }
 
 // 옆 패널은 boolean만 받는다 — 선택 객체를 그대로 물리면 닫을 때 타입이 어긋난다
 const open = ref(false)
@@ -65,20 +68,14 @@ function show(m: Member) { detail.value = m; open.value = true }
     <WsSearch @search="search" @reset="reset">
       <tr>
         <th scope="row"><label for="m-kw">검색어</label></th>
-        <td><input id="m-kw" v-model="f.keyword" class="ws-input" placeholder="이름 · 회원번호 · 이메일" /></td>
+        <td><InputText id="m-kw" v-model="f.keyword" fluid placeholder="이름 · 회원번호 · 이메일" /></td>
         <th scope="row"><label for="m-gr">등급</label></th>
         <td>
-          <select id="m-gr" v-model="f.grade" class="ws-select">
-            <option value="">전체</option>
-            <option v-for="g in GRADES" :key="g">{{ g }}</option>
-          </select>
+          <Select v-model="f.grade" input-id="m-gr" :options="[...GRADES]" placeholder="전체" show-clear fluid />
         </td>
         <th scope="row"><label for="m-st">상태</label></th>
         <td>
-          <select id="m-st" v-model="f.status" class="ws-select">
-            <option value="">전체</option>
-            <option v-for="s in MEMBER_STATUS" :key="s">{{ s }}</option>
-          </select>
+          <Select v-model="f.status" input-id="m-st" :options="[...MEMBER_STATUS]" placeholder="전체" show-clear fluid />
         </td>
       </tr>
     </WsSearch>
@@ -100,7 +97,7 @@ function show(m: Member) { detail.value = m; open.value = true }
       </div>
     </section>
 
-    <WsDialog v-model:open="open" side width="480px" :title="detail ? `${detail.name} (${detail.id})` : '회원 상세'">
+    <Drawer v-model:visible="open" position="right" :style="{ width: '480px' }" :header="detail ? `${detail.name} (${detail.id})` : '회원 상세'">
       <table v-if="detail" class="ws-tb">
         <colgroup><col style="width: 112px" /><col /></colgroup>
         <tbody>
@@ -113,9 +110,9 @@ function show(m: Member) { detail.value = m; open.value = true }
           <tr><th scope="row">최근 로그인</th><td>{{ detail.lastLoginAt }}</td></tr>
         </tbody>
       </table>
-      <template #foot>
-        <button type="button" class="ws-btn" @click="open = false">닫기</button>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end"><Button label="닫기" severity="secondary" outlined @click="open = false" /></div>
       </template>
-    </WsDialog>
+    </Drawer>
   </div>
 </template>

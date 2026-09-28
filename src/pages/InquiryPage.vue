@@ -10,7 +10,13 @@ import { onMounted, ref } from 'vue'
 import PageHead from '../app/PageHead.vue'
 import QueryState from '../app/QueryState.vue'
 import TabGrid from '../grid/TabGrid.vue'
-import WsDialog from '../ws/WsDialog.vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
+import AutoComplete from 'primevue/autocomplete'
+import Textarea from 'primevue/textarea'
+import Drawer from 'primevue/drawer'
+import Dialog from 'primevue/dialog'
 import WsSearch from '../ws/WsSearch.vue'
 import { notify } from '../ws/notify'
 import { badgeClass } from '../ws/badge'
@@ -20,7 +26,9 @@ import { makeInquiries, CHANNELS, STATUSES, ASSIGNEES, STATUS_TONE, type Inquiry
 
 const ALL = makeInquiries(2000)
 
-const f = ref({ keyword: '', channel: '', status: '', assignee: '' })
+const f = ref<{ keyword: string; channel: string | null; status: string | null; assignee: string }>({ keyword: '', channel: null, status: null, assignee: '' })
+const assigneeHits = ref<string[]>([])
+const newAssignee = ref<string | null>(null)
 const applied = ref({ ...f.value })
 
 const selectedCount = ref(0)
@@ -52,8 +60,13 @@ function search() {
   reload()
 }
 function reset() {
-  f.value = { keyword: '', channel: '', status: '', assignee: '' }
+  f.value = { keyword: '', channel: null, status: null, assignee: '' }
   search()
+}
+
+/** 한글 조합 중에도 후보가 따라오는지가 이 칸의 확인 지점이다 */
+function searchAssignee(e: { query: string }) {
+  assigneeHits.value = ASSIGNEES.filter((n) => !e.query || n.includes(e.query))
 }
 
 function openReply(row: Inquiry) {
@@ -74,29 +87,22 @@ function saveReply() {
     <WsSearch @search="search" @reset="reset">
       <tr>
         <th scope="row"><label for="q-kw">검색어</label></th>
-        <td><input id="q-kw" v-model="f.keyword" class="ws-input" placeholder="문의번호 또는 제목" /></td>
+        <td><InputText id="q-kw" v-model="f.keyword" fluid placeholder="문의번호 또는 제목" /></td>
         <th scope="row"><label for="q-ch">채널</label></th>
         <td>
-          <select id="q-ch" v-model="f.channel" class="ws-select">
-            <option value="">전체</option>
-            <option v-for="c in CHANNELS" :key="c">{{ c }}</option>
-          </select>
+          <Select v-model="f.channel" input-id="q-ch" :options="[...CHANNELS]" placeholder="전체" show-clear fluid />
         </td>
         <th scope="row"><label for="q-st">상태</label></th>
         <td>
-          <select id="q-st" v-model="f.status" class="ws-select">
-            <option value="">전체</option>
-            <option v-for="s in STATUSES" :key="s">{{ s }}</option>
-          </select>
+          <Select v-model="f.status" input-id="q-st" :options="[...STATUSES]" placeholder="전체" show-clear fluid />
         </td>
       </tr>
       <template #detail>
         <tr>
           <th scope="row"><label for="q-as">담당자</label></th>
           <td>
-            <!-- datalist — 한글 IME 조합이 네이티브로 돈다. 자동완성 라이브러리가 제일 자주 깨는 지점이다 -->
-            <input id="q-as" v-model="f.assignee" class="ws-input" list="q-as-list" placeholder="이름 1자 이상" />
-            <datalist id="q-as-list"><option v-for="n in ASSIGNEES" :key="n" :value="n" /></datalist>
+            <!-- 한글 IME 조합 중 동작을 확인하는 칸이다. PrimeVue AutoComplete는 compositionend 뒤에 검색한다 -->
+            <AutoComplete v-model="f.assignee" input-id="q-as" :suggestions="assigneeHits" placeholder="이름 1자 이상" fluid @complete="searchAssignee" />
           </td>
           <td colspan="4" />
         </tr>
@@ -112,11 +118,11 @@ function saveReply() {
           <span class="ws-desc">선택 {{ selectedCount }}건</span>
         </div>
         <div class="ws-tit__r">
-          <button type="button" class="ws-btn ws-btn--line" @click="grid?.exportCsv('inquiries.csv')">CSV다운</button>
-          <button type="button" class="ws-btn ws-btn--line" :disabled="!selectedCount" @click="bulkOpen = true">담당자 일괄 변경</button>
+          <Button label="CSV다운" severity="secondary" outlined class="ws-line" @click="grid?.exportCsv('inquiries.csv')" />
+          <Button label="담당자 일괄 변경" severity="secondary" outlined class="ws-line" :disabled="!selectedCount" @click="bulkOpen = true" />
           <span class="ws-sep" aria-hidden="true" />
-          <button type="button" class="ws-btn ws-btn--danger" :disabled="!selectedCount">선택 종결</button>
-          <button type="button" class="ws-btn ws-btn--pri" :disabled="!current" @click="replyOpen = true">답변 등록</button>
+          <Button label="선택 종결" severity="danger" outlined :disabled="!selectedCount" />
+          <Button label="답변 등록" severity="contrast" :disabled="!current" @click="replyOpen = true" />
         </div>
       </div>
 
@@ -148,8 +154,8 @@ function saveReply() {
     </div>
 
     <!-- 답변 — 목록 맥락을 유지해야 해서 옆 패널이다 -->
-    <WsDialog v-model:open="replyOpen" side width="560px" :title="current ? `${current.id} 답변 등록` : '답변 등록'">
-      <template v-if="current">
+    <Drawer v-model:visible="replyOpen" position="right" :style="{ width: '560px' }" :header="current ? `${current.id} 답변 등록` : '답변 등록'">
+      <div v-if="current" class="rp">
         <table class="ws-tb">
           <colgroup><col style="width: 88px" /><col /><col style="width: 88px" /><col /></colgroup>
           <tbody>
@@ -160,30 +166,32 @@ function saveReply() {
         </table>
         <div>
           <label class="ws-req" for="rp-body" style="display: block; margin-bottom: 8px; font-weight: 500">답변 내용</label>
-          <textarea id="rp-body" v-model="reply" class="ws-textarea" rows="10" maxlength="1500" placeholder="고객에게 보낼 답변을 입력하세요" />
+          <Textarea id="rp-body" v-model="reply" rows="10" maxlength="1500" fluid placeholder="고객에게 보낼 답변을 입력하세요" />
           <p class="ws-desc" style="text-align: right">{{ reply.length.toLocaleString() }} / 1,500자</p>
         </div>
+      </div>
+      <template #footer>
+        <div class="rp__foot">
+          <Button label="취소" severity="secondary" outlined @click="replyOpen = false" />
+          <Button label="등록" :disabled="!reply.trim()" @click="saveReply" />
+        </div>
       </template>
-      <template #foot>
-        <button type="button" class="ws-btn" @click="replyOpen = false">취소</button>
-        <button type="button" class="ws-btn ws-btn--search" :disabled="!reply.trim()" @click="saveReply">등록</button>
-      </template>
-    </WsDialog>
+    </Drawer>
 
-    <WsDialog v-model:open="bulkOpen" title="담당자 일괄 변경" width="420px">
-      <p>선택한 <b>{{ selectedCount }}건</b>의 담당자를 변경합니다.</p>
-      <select class="ws-select" aria-label="새 담당자">
-        <option v-for="n in ASSIGNEES" :key="n">{{ n }}</option>
-      </select>
-      <template #foot>
-        <button type="button" class="ws-btn" @click="bulkOpen = false">취소</button>
-        <button type="button" class="ws-btn ws-btn--search" @click="bulkOpen = false; notify('담당자를 변경했습니다', 'success')">확인</button>
+    <Dialog v-model:visible="bulkOpen" modal header="담당자 일괄 변경" :style="{ width: '420px' }">
+      <p style="margin-bottom: 12px">선택한 <b>{{ selectedCount }}건</b>의 담당자를 변경합니다.</p>
+      <Select v-model="newAssignee" :options="ASSIGNEES" placeholder="새 담당자" aria-label="새 담당자" fluid />
+      <template #footer>
+        <Button label="취소" severity="secondary" outlined @click="bulkOpen = false" />
+        <Button label="확인" :disabled="!newAssignee" @click="bulkOpen = false; notify('담당자를 변경했습니다', 'success')" />
       </template>
-    </WsDialog>
+    </Dialog>
   </div>
 </template>
 
 <style scoped>
+.rp > * + * { margin-top: var(--ws-gap-region); }
+.rp__foot { display: flex; justify-content: flex-end; gap: 6px; }
 kbd {
   padding: 1px 4px; border: 1px solid var(--ws-border); border-radius: var(--ws-radius-sm);
   background: var(--ws-surface-head); font-family: ui-monospace, monospace; font-size: var(--ws-font-size-sm);

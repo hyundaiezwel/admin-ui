@@ -29,5 +29,5 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({ history: createWebHashHistory(), routes, scrollBehavior: () => ({ top: 0 }) })
 
 router.afterEach((to) => {
-  document.title = `${to.path === '/login' ? '로그인' : titleOf(to.path)} — EZ Admin DS2`
+  document.title = `${to.path === '/login' ? '로그인' : titleOf(to.path)} — EZ Admin DS3`
 })

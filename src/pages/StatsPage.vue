@@ -2,7 +2,7 @@
 /**
  * 통계 — 차트 전 종류 + 표·차트 병치.
  *
- * 원본에는 카드가 없다. 구획 제목 + 테두리 상자로 평면에 둔다 — 그림자는 원본 어휘가 아니다.
+ * **카드 화면이다(D3 C).** 차트 위젯끼리 독립이라 카드로 가른다. 집계 표만 한 카드 안의 평면 표다.
  * 원본 차트는 FusionCharts(상용)라 옮겨 오지 않았고 ECharts로 대신 그린다.
  *
  * 패턴(`aria.decal`)은 쓰지 않는다(사용자 결정). 그래서 이 화면은 **범례를 빼면 안 된다** —
@@ -12,6 +12,8 @@ import { computed, onMounted, ref } from 'vue'
 import PageHead from '../app/PageHead.vue'
 import QueryState from '../app/QueryState.vue'
 import EzChart from '../app/EzChart.vue'
+import Button from 'primevue/button'
+import SelectButton from 'primevue/selectbutton'
 import { useMockQuery } from '../app/useMockQuery'
 import { won } from '@fixtures/rng'
 
@@ -75,18 +77,16 @@ const table = computed(() =>
 </script>
 
 <template>
-  <div class="ws-page">
+  <div class="ws-page ws-page--canvas">
     <PageHead />
 
-    <section class="ws-sec">
+    <section class="ws-sec ws-card">
       <div class="ws-tit">
         <div class="ws-tit__l"><h2 class="ws-tit__h">조회 기간</h2></div>
         <div class="ws-tit__r">
-          <div class="ws-seg" role="radiogroup" aria-label="조회 기간">
-            <label v-for="r in RANGES" :key="r"><input v-model="range" type="radio" name="st-range" :value="r" /><span>{{ r }}</span></label>
-          </div>
+          <SelectButton v-model="range" :options="RANGES" :allow-empty="false" aria-label="조회 기간" />
           <span class="ws-sep" aria-hidden="true" />
-          <button type="button" class="ws-btn ws-btn--line">엑셀 내려받기</button>
+          <Button label="엑셀 내려받기" severity="secondary" outlined class="ws-line" />
         </div>
       </div>
       <QueryState :loading="loading" :error="error" :lines="8" @retry="reload">
@@ -94,23 +94,23 @@ const table = computed(() =>
       </QueryState>
     </section>
 
-    <section class="ws-sec">
+    <section class="ws-sec ws-card">
       <div class="ws-tit"><div class="ws-tit__l"><h2 class="ws-tit__h">매출·건수</h2></div></div>
       <div class="ws-chartbox"><EzChart :option="combo" height="280px" /></div>
     </section>
 
     <div class="ws-split">
-      <section class="ws-sec">
+      <section class="ws-sec ws-card">
         <div class="ws-tit"><div class="ws-tit__l"><h2 class="ws-tit__h">분류 구성</h2></div></div>
         <div class="ws-chartbox"><EzChart :option="donut" height="260px" /></div>
       </section>
-      <section class="ws-sec">
+      <section class="ws-sec ws-card">
         <div class="ws-tit"><div class="ws-tit__l"><h2 class="ws-tit__h">요일·시간대 주문 밀도</h2></div></div>
         <div class="ws-chartbox"><EzChart :option="heat" height="260px" /></div>
       </section>
     </div>
 
-    <section class="ws-sec">
+    <section class="ws-sec ws-card">
       <div class="ws-tit"><div class="ws-tit__l"><h2 class="ws-tit__h">분류별 집계</h2></div></div>
       <table class="ws-gtb">
         <caption class="ws-sr-only">분류별 주문 건수와 매출</caption>

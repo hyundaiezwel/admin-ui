@@ -2,11 +2,15 @@
 /**
  * 대시보드 — KPI · 차트 3종 · 최근 문의. 드릴다운은 해당 목록 화면으로 보낸다.
  *
- * 원본 관리자센터 메인의 **요약 칸** 어휘를 따른다 — 흰 칸 · 1px #ccc · 모서리 6.
- * 그림자와 카드 여백을 늘리지 않는다. 폭을 2:1로 나눠 무게를 준다.
+ * **카드 화면이다(D3 C).** 위젯끼리 서로 독립이라 카드로 가른다 — 회색 캔버스 · 흰 카드 ·
+ * 모서리 12. 목록·폼은 평면이다. 폭을 2:1로 나눠 무게를 준다.
+ * 캔버스 위에 바로 놓이는 기간 선택기는 테두리를 --ws-field-border-canvas로 진하게 쓴다.
  */
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import Button from 'primevue/button'
+import SelectButton from 'primevue/selectbutton'
 import PageHead from '../app/PageHead.vue'
 import QueryState from '../app/QueryState.vue'
 import EzChart from '../app/EzChart.vue'
@@ -58,16 +62,17 @@ const byCategory = {
   series: [{ type: 'bar', barWidth: 14, data: CATS.map((c) => inquiries.filter((i) => i.category === c).length) }],
 }
 const recent = computed(() => inquiries.slice(0, 6))
+const period = ref('14일')
 </script>
 
 <template>
-  <div class="ws-page">
-    <PageHead />
+  <div class="ws-page ws-page--canvas">
+    <div class="ws-pgt-row"><PageHead /><SelectButton v-model="period" :options="['7일', '14일', '30일']" :allow-empty="false" aria-label="기간" /></div>
 
     <QueryState :loading="loading" :error="error" :lines="3" @retry="reload">
       <ul class="kpis">
         <li v-for="k in kpis" :key="k.label">
-          <RouterLink :to="k.to" class="kpi">
+          <RouterLink :to="k.to" class="kpi ws-card">
             <span class="kpi__label">{{ k.label }}</span>
             <span class="kpi__value" :class="{ 'is-danger': k.danger }">{{ k.value }}<small>{{ k.unit }}</small></span>
             <!-- 증감은 화살표 + 부호로 읽힌다. 색만으로 방향을 알리지 않는다 -->
@@ -78,28 +83,28 @@ const recent = computed(() => inquiries.slice(0, 6))
     </QueryState>
 
     <div class="ws-split ws-split--21">
-      <section class="ws-sec">
+      <section class="ws-sec ws-card">
         <div class="ws-tit">
           <div class="ws-tit__l"><h2 class="ws-tit__h">주문·취소 추이</h2><span class="ws-total">최근<strong>14</strong>일</span></div>
-          <div class="ws-tit__r"><button type="button" class="ws-btn ws-btn--line" @click="router.push('/stats')">통계 자세히</button></div>
+          <div class="ws-tit__r"><Button label="통계 자세히" severity="secondary" outlined class="ws-line" @click="router.push('/stats')" /></div>
         </div>
         <div class="ws-chartbox"><EzChart :option="trend" height="260px" /></div>
       </section>
-      <section class="ws-sec">
+      <section class="ws-sec ws-card">
         <div class="ws-tit"><div class="ws-tit__l"><h2 class="ws-tit__h">문의 채널 구성</h2></div></div>
         <div class="ws-chartbox"><EzChart :option="byChannel" height="260px" /></div>
       </section>
     </div>
 
     <div class="ws-split ws-split--12">
-      <section class="ws-sec">
+      <section class="ws-sec ws-card">
         <div class="ws-tit"><div class="ws-tit__l"><h2 class="ws-tit__h">문의 분류별 건수</h2></div></div>
         <div class="ws-chartbox"><EzChart :option="byCategory" height="232px" /></div>
       </section>
-      <section class="ws-sec">
+      <section class="ws-sec ws-card">
         <div class="ws-tit">
           <div class="ws-tit__l"><h2 class="ws-tit__h">최근 문의</h2></div>
-          <div class="ws-tit__r"><RouterLink to="/cs/inquiries" class="ws-btn ws-btn--line">전체 보기</RouterLink></div>
+          <div class="ws-tit__r"><Button label="전체 보기" severity="secondary" outlined class="ws-line" @click="router.push('/cs/inquiries')" /></div>
         </div>
         <table class="ws-gtb recent">
           <caption class="ws-sr-only">최근 접수된 문의 6건</caption>
@@ -121,12 +126,8 @@ const recent = computed(() => inquiries.slice(0, 6))
 
 <style scoped>
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ws-gap-inter); }
-.kpi {
-  display: flex; flex-direction: column; gap: 6px; padding: 16px 20px;
-  border: 1px solid var(--ws-border); border-radius: var(--ws-radius); background: var(--ws-surface);
-  color: var(--ws-text); text-decoration: none;
-}
-.kpi:hover { border-color: var(--ws-field-border); text-decoration: none; }
+.kpi { display: flex; flex-direction: column; gap: 6px; color: var(--ws-text); text-decoration: none; }
+.kpi:hover { text-decoration: none; box-shadow: 0 0 0 1px var(--ws-field-border-focus), var(--ws-card-shadow); }
 .kpi__label { color: var(--ws-text-sub); }
 .kpi__value { font-size: 26px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .kpi__value small { margin-left: 3px; font-size: var(--ws-font-size); font-weight: 400; color: var(--ws-text-muted); }
