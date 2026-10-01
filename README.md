@@ -29,6 +29,12 @@ Artifact 시안은 Google Fonts만 실을 수 있어 앱과 시안이 같은 글
 
 ---
 
+## UI/UX 규약
+
+화면을 만들거나 고칠 때는 [docs/ui-conventions.md](docs/ui-conventions.md)를 따른다. 검토 지적을 번호 붙은 공통 규칙(`UI-nn`)으로 남긴 문서다. 규칙마다 구현 위치와 자동 검사를 함께 적었다.
+- `npm run check:ui` — 정적 검사(조회 영역 · 전역 조건 · '전체' 값 · 파일 첨부 · 표 칸 flex · 조회 영역 인라인 폭)
+- `npm run dev` 후 `SB_URL=http://localhost:5320 npm run check:responsive` — 화면을 1280 · 1024 폭으로 열어 깨짐 · 상단 바 넘침을 잰다
+
 ## 결정 — D1~D8
 
 2026-09-28 선택지 화면에서 골랐다. D6(상단바)은 같은 날 D2를 뒤집었다.

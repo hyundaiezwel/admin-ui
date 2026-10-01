@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "npm run check:contrast && vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
-    "check:contrast": "node scripts/check-contrast.mjs"
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "check:ui": "node scripts/check-ui.mjs",
+    "check:responsive": "node scripts/check-responsive.mjs"
   },
   "dependencies": {
     "@primevue/themes": "^4.5.4",
