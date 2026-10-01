@@ -99,8 +99,8 @@ const columns = [
       <tr>
         <th scope="row"><label for="us-kw">검색어</label></th>
         <td>
-          <div style="display: flex; gap: 6px">
-            <Select v-model="f.kwType" :options="['이름', '사번']" aria-label="검색어 구분" style="width: 100px; flex: none" />
+          <div class="ws-kw">
+            <Select v-model="f.kwType" :options="['이름', '사번']" aria-label="검색어 구분" class="ws-kw__type" />
             <InputText id="us-kw" v-model="f.kw" fluid :placeholder="`${f.kwType} 입력`" />
           </div>
         </td>

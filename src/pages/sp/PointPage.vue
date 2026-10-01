@@ -104,8 +104,8 @@ const byFund = (x: number) => [['지원기관', x / 4], ['기업', x / 4], ['개
       <tr>
         <th scope="row"><label for="pt-kw">검색어</label></th>
         <td>
-          <div style="display: flex; gap: 6px">
-            <Select v-model="f.kwType" :options="['이름', '사번', '생년월일']" aria-label="검색어 구분" style="width: 110px; flex: none" />
+          <div class="ws-kw">
+            <Select v-model="f.kwType" :options="['이름', '사번', '생년월일']" aria-label="검색어 구분" class="ws-kw__type" />
             <InputText id="pt-kw" v-model="f.kw" fluid :placeholder="`${f.kwType} 입력`" />
           </div>
         </td>
