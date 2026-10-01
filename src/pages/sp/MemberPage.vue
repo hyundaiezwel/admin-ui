@@ -205,8 +205,8 @@ const fmt = (x: number) => x.toLocaleString('ko-KR')
       <tr>
         <th scope="row"><label for="m-kw">검색어</label></th>
         <td>
-          <div style="display: flex; gap: 6px">
-            <Select v-model="f.kwType" :options="KW" aria-label="검색어 구분" style="width: 120px; flex: none" />
+          <div class="ws-kw">
+            <Select v-model="f.kwType" :options="KW" aria-label="검색어 구분" class="ws-kw__type" />
             <InputText id="m-kw" v-model="f.kw" fluid :placeholder="`${f.kwType} 입력`" />
           </div>
         </td>

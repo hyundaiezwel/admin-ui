@@ -146,8 +146,8 @@ function finish(header: string, to: string | null, p: ActionPayload, allow: stri
       <tr>
         <th scope="row"><label for="b-kw">검색어</label></th>
         <td>
-          <div style="display: flex; gap: 6px">
-            <Select v-model="f.kwType" :options="['기업명', '사업자번호', '접수번호']" aria-label="검색어 구분" style="width: 120px; flex: none" />
+          <div class="ws-kw">
+            <Select v-model="f.kwType" :options="['기업명', '사업자번호', '접수번호']" aria-label="검색어 구분" class="ws-kw__type" />
             <InputText id="b-kw" v-model="f.kw" fluid :placeholder="`${f.kwType} 입력`" />
           </div>
         </td>

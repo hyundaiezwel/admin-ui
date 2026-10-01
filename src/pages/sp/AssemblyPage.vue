@@ -65,9 +65,11 @@ const f = (n: number) => n.toLocaleString('ko-KR')
 
     <section class="ws-sec ws-card">
       <Tabs v-model:value="tab" scrollable>
-        <TabList>
+        <div class="ws-xscroll"><!-- 탭 9개 — Tabs 자체 스크롤(화살표)로 넘긴다(UI-16) -->
+          <TabList>
           <Tab v-for="(r, i) in REPORTS" :key="r.id" :value="r.id">{{ i + 1 }}. {{ r.name }}</Tab>
         </TabList>
+        </div>
         <TabPanels>
           <TabPanel v-for="r in REPORTS" :key="r.id" :value="r.id">
             <div class="ws-tit" style="margin-bottom: 12px">
