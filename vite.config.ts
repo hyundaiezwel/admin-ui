@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -12,6 +13,8 @@ export default defineConfig({
     },
   },
   server: { port: 5320 },
+  /* 단위 시험 — src/lib 의 컴포저블. 포커스·키 입력을 보므로 DOM이 필요하다 */
+  test: { environment: 'jsdom', include: ['src/**/*.spec.ts'] },
   /* 쓰는 PrimeVue 모듈을 미리 묶는다. 안 하면 화면을 처음 열 때마다 Vite가 새 모듈을 묶으며
      페이지를 새로고침한다 — 옮겨 다니다 입력한 값이 날아간다(실측: selectbutton, datepicker…) */
   optimizeDeps: { include: ['primevue/autocomplete','primevue/button','primevue/checkbox','primevue/config','primevue/datepicker','primevue/dialog','primevue/drawer','primevue/fileupload','primevue/inputnumber','primevue/inputtext','primevue/menu','primevue/multiselect','primevue/paginator','primevue/password','primevue/popover','primevue/toggleswitch','primevue/progressbar','primevue/radiobutton','primevue/select','primevue/selectbutton','primevue/tab','primevue/tablist','primevue/tabpanel','primevue/tabpanels','primevue/tabs','primevue/textarea','primevue/toast','primevue/toasteventbus','primevue/toastservice','primevue/tooltip', '@primevue/themes', '@primevue/themes/aura'] },
