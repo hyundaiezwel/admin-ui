@@ -32,7 +32,9 @@ Artifact 시안은 Google Fonts만 실을 수 있어 앱과 시안이 같은 글
 ## UI/UX 규약
 
 화면을 만들거나 고칠 때는 [docs/ui-conventions.md](docs/ui-conventions.md)를 따른다. 검토 지적을 번호 붙은 공통 규칙(`UI-nn`)으로 남긴 문서다. 규칙마다 구현 위치와 자동 검사를 함께 적었다.
-- `npm run check:ui` — 정적 검사(조회 영역 · 전역 조건 · '전체' 값 · 파일 첨부 · 표 칸 flex · 조회 영역 인라인 폭)
+- `npm run check:ui` — 정적 검사(조회 영역 · 전역 조건 · '전체' 값 · 파일 첨부 · 표 칸 flex · 조회 영역 인라인 폭 · 예약 클래스 재정의)
+- `npm run test` — `src/lib` 단위 시험(vitest). Pages 배포 전에 돈다
+- 접근성 [docs/accessibility.md](docs/accessibility.md) · 반복 판단 [docs/patterns.md](docs/patterns.md) · 감사 교훈 [docs/lessons-from-audits.md](docs/lessons-from-audits.md)
 - `npm run dev` 후 `SB_URL=http://localhost:5320 npm run check:responsive` — 화면을 1280 · 1024 폭으로 열어 깨짐 · 상단 바 넘침을 잰다
 
 ## 결정 — D1~D8
@@ -166,12 +168,14 @@ src/ws/           디자인 시스템 층
   primevue.css      PrimeVue 보정 — 글자 14 · 줄 높이 20 · 팝업 머리 · 탭
   base.css          전역 — @layer reset · 글꼴 · 포커스 링
   layout.css        화면 블록 — page · pgt · sh · sec/tit · tb · gtb · btnbox · card
+  primitives.css    조립 부품 — stack · cluster · grid · sidebar · center · prose (DS1에서)
   controls.css      PrimeVue가 맡지 않는 것 — 뱃지 · 체크 배치 · 빈 상태
   WsSearch.vue      조회 영역 — 목록 화면 다섯 장이 같이 쓴다
   notify.ts         토스트 — PrimeVue ToastEventBus
   (지원 사업 미리보기에서 더한 것 — 아래 절)
   WsPeriod · WsPager · WsActionDialog · WsResultDialog · WsDownload · WsPickField
   WsMasked · WsFileView · WsUpload · WsAnchorNav · WsStepTrack · period.ts · mask.ts
+src/lib/          모달 포커스 가두기 · Esc 닫기 · 목록 조회 상태 · 클라이언트 페이징 · 오류 문구 (DS1에서, vitest)
 src/grid/         Tabulator 래퍼 + WebSquare 스킨
 src/app/          셸 조각 · 차트 래퍼 · 조회 상태 · 테마 · 서버 페이징 목업(usePaged)
 src/pages/        로그인 · 컴포넌트 카탈로그
@@ -333,4 +337,14 @@ AS-IS 14화면을 7자리로 합쳤다(RPA 사본 3쌍 · 중복 등록 2쌍 · 
 
 ## 다음 단계
 
-- 고대비 모드 · 글자 배율 (DS1에 있다)
+- 고대비 모드 · 글자 배율 (DS1에 있었다 — 아래 통합 이력)
+
+## 통합 이력
+
+폐기하는 저장소 셋에서 쓸모 있는 것을 2026-10-03에 이 저장소로 옮겼다. 원본 저장소와 그 Pages는 남지 않는다.
+
+| 저장소 | 가져온 것 | 두고 온 것 |
+|---|---|---|
+| `ez-design-system` (DS1, `@ezwel/ui`) | `src/lib` 컴포저블 5종과 vitest 시험 · 레이아웃 프리미티브(`primitives.css`, `ws-` 이름) · 접근성 · 패턴 · 판단 원칙(`docs/accessibility.md`, `docs/patterns.md`) | `--ez-*` 토큰 · `Ez*` 컴포넌트와 그 시험 · 토스트 큐(PrimeVue Toast가 맡는다) · 고대비 · 글자 배율 |
+| `ez-admin-design-system` (DS1 어드민 목업) | PrimeVue 선정 실측(`docs/decisions/primevue-selection.md`) · 탭 · 사이드바 규칙(UI-24~26) · 예약 클래스 검사(UI-30) · 감사 교훈(`docs/lessons-from-audits.md`) | 목업 화면 · 스파이크 소스 · 표시 설정(`prefs.ts` — 테마는 `src/app/theme.ts`가 이미 하고, 고대비 · 글자 배율 · 부분 다크는 받쳐 줄 토큰이 없다) |
+| `ez-websquare-vue` (WebSquare 원본 이식) | 원본 DOM · 클래스 대응(`docs/websquare-dom-contract.md`) · 색 빈도 집계(`reference/websquare/`) | 원본 CSS · 이미지 · 화면 XML · 엔진 파일 · 변환기 — 사내 자산이라 공개 저장소에 싣지 않는다 |
