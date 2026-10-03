@@ -1,0 +1,48 @@
+/* =============================================================================
+ * 레이아웃 프리미티브 — DS1(`@ezwel/ui` layout.css)의 `.ez-*`를 `ws-` 이름으로 옮겼다.
+ *
+ * 화면 블록(layout.css)은 원본 퍼블리싱을 옮긴 것이고, 이 파일은 그 **안쪽**을 조립하는
+ * 범용 부품이다. 새 화면에서 일회용 margin이나 `position: absolute`가 나오면 부품이
+ * 모자란 것이다.
+ *
+ * 간격은 `--gap`으로 받고 기본값은 역할 토큰(`--ws-gap-*`)이다. 숫자를 직접 넣지 않는다.
+ *
+ *   <div class="ws-stack" style="--gap: var(--ws-gap-region)">
+ *
+ * 옮기지 않은 것 둘:
+ * - Split — `.ws-split`(layout.css)이 이미 있다. 2:1·1:2 변형도 있다.
+ * - Box — `.ws-card`가 같은 자리다. 캔버스 화면(`.ws-page--canvas`)에서만 사는 것이 DS3 결정이라
+ *   어디서나 켜지는 상자를 따로 두지 않는다.
+ *
+ * 이 이름들은 예약어다 — 화면이 다시 정의하면 `npm run check:ui`가 막는다(UI-30).
+ * ========================================================================== */
+
+/* Stack — 세로로 쌓고 간격 하나만. 자식에 margin을 주지 않는다 */
+.ws-stack { display: flex; flex-direction: column; gap: var(--gap, var(--ws-gap-inter)); }
+/* 마지막 요소를 아래로 밀어붙인다(카드 푸터 등) */
+.ws-stack > .ws-stack__end { margin-top: auto; }
+
+/* Cluster — 가로로 묶고 넘치면 줄바꿈. 툴바·버튼 줄·칩. 미디어 쿼리 대신 flex-wrap */
+.ws-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap, var(--ws-gap-intra)); }
+.ws-cluster--between { justify-content: space-between; }
+.ws-cluster--end { justify-content: flex-end; }
+.ws-cluster--baseline { align-items: baseline; }
+/* 이 자식부터 오른쪽으로 민다 — 툴바의 좌/우 분리 */
+.ws-cluster > .ws-cluster__push { margin-left: auto; }
+
+/* Grid — 열 수를 세지 않는다. 최소 폭만 정하면 브라우저가 열 수를 정한다(KPI 타일·카드 목록).
+   목록 그리드(Tabulator)는 `.ws-gv`다 — 이 이름과 섞지 않는다 */
+.ws-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--min, 220px), 1fr)); gap: var(--gap, var(--ws-gap-region)); }
+
+/* Sidebar — 비대칭 2열. 곁열은 내용 폭, 본문은 나머지. 본문이 --min보다 좁아지면 쌓인다 */
+.ws-sidebar { display: flex; flex-wrap: wrap; gap: var(--gap, var(--ws-gap-region)); }
+.ws-sidebar > :first-child { flex-basis: var(--side, 320px); flex-grow: 1; }
+.ws-sidebar > :last-child { flex-basis: 0; flex-grow: 999; min-inline-size: var(--min, 50%); }
+.ws-sidebar--right > :first-child { order: 2; }
+
+/* Center — 최대 폭 + 가운데. 읽는 화면(단일 폼·빈 상태).
+   폭은 글자 수다 — 45~75자에서 끊어야 다음 줄 첫 글자를 눈이 찾는다(DS1 --ez-measure 68ch) */
+.ws-center { box-sizing: content-box; max-inline-size: var(--max, 68ch); margin-inline: auto; padding-inline: var(--ws-gap-block); }
+
+/* 문단에 직접 걸어 읽기 폭을 강제한다. 표·그리드에는 걸지 않는다 — 읽는 게 아니라 훑는 것이다 */
+.ws-prose { max-inline-size: 68ch; }
