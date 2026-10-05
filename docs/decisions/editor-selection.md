@@ -45,7 +45,8 @@ ProseMirror 실버전: `prosemirror-view` 1.42.6 · `prosemirror-model` 1.25.12 
 | Link(StarterKit 안) | StarterKit의 `link`를 끄고 **`class` 속성을 뺀 Link**를 따로 등록 | Tiptap 3 StarterKit에 Link가 들어 있다. 그런데 기본 Link는 붙여넣은 `<a class>`의 class를 살려 허용 목록을 넘었다(시험이 잡음) |
 | Underline | StarterKit에 포함 — 따로 넣지 않음 | Tiptap 3에서 StarterKit으로 들어왔다 |
 | Image `allowBase64:false` | 그대로 + **`width` · `height` · `title` 속성을 뺀 Image** | 기본 Image가 붙여넣은 width 등을 살렸다(시험이 잡음) |
-| Table 계열 | 그대로 + **출력의 `colgroup` · 너비 style을 뺀 Table**, `resizable:false` | 기본 출력이 `style="min-width"` · `<colgroup>`을 낸다. 편집 화면 DOM에는 남지만 내보내는 HTML에는 없다 |
+| Table 계열 | `resizable:true`(열 경계 끌기). 출력은 **퍼센트 colgroup**으로 바꾸고 칸의 `colwidth`는 내보내지 않는다 | 기본 출력(px colwidth · `min-width`)은 대외 화면 폭이 다르면 넘친다. 열 하나만 끌면 나머지 열 폭이 비어 저장 결과가 화면과 달라져서, 화면에서 잰 폭으로 빈 열을 채운다 |
+| Image 크기 | 직접 만든 NodeView — 오른쪽 아래 손잡이 끌기 + 툴바 25 · 50 · 75 · 100% | Tiptap `resize`는 px로 저장한다. 퍼센트 하나로 맞추려고 직접 만들었다 |
 | Placeholder · CharacterCount | `@tiptap/extensions`에서 | Tiptap 3에서 패키지가 합쳐졌다 |
 | Color + TextStyle | `@tiptap/extension-text-style` 한 패키지 | Tiptap 3에서 Color가 이 패키지로 들어왔다 |
 | FileHandler | 그대로 + 형식이 틀린 파일은 `handleDrop/handlePaste`가 먼저 막고 알린다 | FileHandler는 형식이 틀린 파일을 조용히 버린다 — 사용자가 왜 안 들어갔는지 모른다 |
@@ -63,11 +64,13 @@ ProseMirror 실버전: `prosemirror-view` 1.42.6 · `prosemirror-model` 1.25.12 
 | `span` | `style`(color) |
 | `ul` · `li` | — |
 | `ol` | `start` · `type` |
-| `img` | `src`(https만 — `imageHosts`를 주면 그 호스트만, 상대 주소 · 목업 blob: 허용 / data: · file: · http: 금지), `alt` |
-| `table` · `thead` · `tbody` · `tr` | — |
+| `img` | `style`(width 1~100%), `src`(https만 — `imageHosts`를 주면 그 호스트만, 상대 주소 · 목업 blob: 허용 / data: · file: · http: 금지), `alt` |
+| `table` · `thead` · `tbody` · `tr` · `colgroup` | — |
+| `col` | `style`(width %) — 표 열 너비, 합 100 |
 | `th` · `td` | `colspan` · `rowspan` · `style`(text-align) |
 
-- `style`은 `color`와 `text-align`만.
+- `style`은 요소마다 정해진 것만: `span`→color, `p`·`h*`·`th`·`td`→text-align, `img`·`col`→width(퍼센트만, px 금지).
+- 이미지 폭 100%는 값 없이 저장한다(원본 폭, 본문보다 넓으면 본문 폭). 표 전체 폭은 늘 100%.
 - 빈 본문은 `''`(빈 `<p></p>`를 내보내지 않는다).
 - 글자색은 hex로 저장한다(`#c62828` 등 6색, 흰 바탕 4.5:1 이상). `var(--ws-*)`는 서버 · 대외 화면이 모른다.
   **붙여넣은 색은 가장 가까운 팔레트 색으로 맞춘다**(`nearestTextColor` — 눈 가중 거리). 검정 계열은 기본색(색 없음)이 된다.
@@ -101,7 +104,7 @@ IME 문제를 재현할 수 없다. 자동화로 확인한 것은 완성형 한�
 ## 6. 판정
 
 - **Tiptap 3로 진행한다** — 토큰 · PrimeVue 4 툴바로 에디터를 만들 수 있고, 허용 목록 · base64 금지 · 링크 스킴 제한을
-  스키마와 시험(`WsEditor.spec.ts` 14건)으로 지킬 수 있음을 확인했다.
+  스키마와 시험(`WsEditor.spec.ts` 20건)으로 지킬 수 있음을 확인했다.
 - **한글 IME는 판정 보류** — §5 표가 채워질 때까지. Quill 비교는 실패 사례가 나오면 한다.
 
 ## 7. 남은 것 — 실제 관리자 저장소로 옮길 때 점검할 것

@@ -28,7 +28,7 @@ import Select from 'primevue/select'
 import Menu from 'primevue/menu'
 import InputText from 'primevue/inputtext'
 import AppIcon from '../app/AppIcon.vue'
-import { IMAGE_LABEL, IMAGE_TYPES, LINK_ATTRS, TEXT_COLORS, isSafeImageSrc, isSafeUrl, nearestTextColor } from './editor-schema'
+import { IMAGE_LABEL, IMAGE_TYPES, IMAGE_WIDTHS, LINK_ATTRS, TEXT_COLORS, dragPct, isSafeImageSrc, isSafeUrl, nearestTextColor, parsePct } from './editor-schema'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -104,7 +104,6 @@ async function insertFiles(files: File[], at?: number) {
 }
 
 /* ---------- 확장 구성 ---------- */
-/** 표 — Tiptap 기본 출력의 colgroup · 너비 style을 빼 허용 목록 안에 둔다(크기 조절은 쓰지 않는다) */
 /** 링크 — 기본 확장은 붙여넣은 <a class>를 살린다. class를 속성에서 빼 허용 목록(href · target · rel) 안에 둔다 */
 const SafeLink = Link.extend({
   addAttributes() {
@@ -120,10 +119,63 @@ const SafeImage = Image.extend<{ isAllowedSrc: (src: string) => boolean } & Reco
   addOptions() { return { ...(this.parent?.() ?? {}), isAllowedSrc: () => false } },
   addAttributes() {
     const { src, alt } = (this.parent?.() ?? {}) as Record<string, unknown>
-    return { src, alt } as ReturnType<NonNullable<typeof this.parent>>
+    return {
+      src, alt,
+      // 폭 — 퍼센트 정수만(style="width: N%"). px · width 속성은 버린다(대외 화면 폭이 달라도 비율이 유지되게)
+      width: {
+        default: null,
+        parseHTML: (el: HTMLElement) => parsePct(el.style.width),
+        renderHTML: (a: Record<string, unknown>) => (a.width ? { style: `width: ${a.width}%` } : {}),
+      },
+    } as ReturnType<NonNullable<typeof this.parent>>
   },
   parseHTML() {
     return [{ tag: 'img[src]', getAttrs: (el) => (this.options.isAllowedSrc((el as HTMLElement).getAttribute('src') ?? '') ? null : false) }]
+  },
+  /** 편집 화면 — 오른쪽 아래 손잡이를 끌어 폭을 바꾼다. 버튼(25 · 50 · 75 · 100%)과 같은 값(퍼센트)을 고친다 */
+  addNodeView() {
+    return ({ node, editor: ed, getPos }) => {
+      let cur = node
+      const dom = document.createElement('span')
+      dom.className = 'wse__img'
+      const img = document.createElement('img')
+      const handle = document.createElement('span')
+      handle.className = 'wse__grip'
+      handle.setAttribute('aria-hidden', 'true')
+      dom.append(img, handle)
+      const paint = (n: typeof node) => {
+        img.src = n.attrs.src
+        img.alt = n.attrs.alt ?? ''
+        dom.style.width = n.attrs.width ? `${n.attrs.width}%` : ''
+      }
+      paint(node)
+      handle.addEventListener('pointerdown', (e) => {
+        if (!ed.isEditable) return
+        e.preventDefault()
+        const doc = ed.view.dom as HTMLElement
+        const cs = getComputedStyle(doc)
+        const inner = doc.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+        const start = cur.attrs.width ?? Math.round((dom.getBoundingClientRect().width / inner) * 100)
+        const x0 = e.clientX
+        let pct = start
+        handle.setPointerCapture?.(e.pointerId)
+        const move = (ev: PointerEvent) => { pct = dragPct(start, ev.clientX - x0, inner); dom.style.width = `${pct}%` }
+        const up = () => {
+          handle.removeEventListener('pointermove', move)
+          handle.removeEventListener('pointerup', up)
+          const pos = typeof getPos === 'function' ? getPos() : undefined
+          if (pos != null) ed.view.dispatch(ed.state.tr.setNodeMarkup(pos, undefined, { ...cur.attrs, width: pct >= 100 ? null : pct }))
+        }
+        handle.addEventListener('pointermove', move)
+        handle.addEventListener('pointerup', up)
+      })
+      return {
+        dom,
+        update: (n) => { if (n.type !== cur.type) return false; cur = n; paint(n); return true },
+        stopEvent: (e) => e.target === handle,
+        ignoreMutation: () => true,
+      }
+    }
   },
 })
 /** 글자색 — 붙여넣은 임의 색을 가장 가까운 팔레트 색으로 맞춘다(검정 계열은 기본색) */
@@ -141,7 +193,42 @@ const PaletteColor = Color.extend({
     }]
   },
 })
-const PlainTable = Table.extend({ renderHTML({ HTMLAttributes }) { return ['table', HTMLAttributes, ['tbody', 0]] } })
+/**
+ * 표 — 열 경계를 끌어 너비를 바꾼다(resizable). 편집 중 너비는 칸의 colwidth(px)에 있고,
+ * **출력은 퍼센트 colgroup**으로 바꾼다 — `<colgroup><col style="width: N%">`. 칸의 colwidth 속성은 내보내지 않는다.
+ * 표 전체 폭은 100% 고정이라 대외 화면 폭이 바뀌어도 넘치지 않는다. 너비를 한 번도 안 바꾼 표는 colgroup 없이 나간다.
+ */
+const COL_BASE = 600 // 퍼센트 → 편집용 px로 되돌릴 때의 기준 폭
+const PlainTable = Table.extend({
+  renderHTML({ node, HTMLAttributes }) {
+    const widths: (number | null)[] = []
+    node.firstChild?.forEach((cell) => {
+      const span = (cell.attrs.colspan as number) ?? 1
+      const cw = cell.attrs.colwidth as number[] | null
+      for (let i = 0; i < span; i++) widths.push(cw?.[i] ?? null)
+    })
+    if (!widths.some((w) => w)) return ['table', HTMLAttributes, ['tbody', 0]]
+    const known = widths.filter((w): w is number => !!w)
+    const avg = known.reduce((a, b) => a + b, 0) / known.length
+    const full = widths.map((w) => w ?? avg)
+    const sum = full.reduce((a, b) => a + b, 0)
+    const cols = full.map((w) => ['col', { style: `width: ${Math.round((w / sum) * 1000) / 10}%` }] as [string, Record<string, string>])
+    return ['table', HTMLAttributes, ['colgroup', ...cols], ['tbody', 0]]
+  },
+})
+/** 칸 — colwidth는 편집용이라 내보내지 않고, 불러올 때는 표의 colgroup 퍼센트에서 되살린다 */
+const colwidthAttr = {
+  default: null,
+  parseHTML: (el: HTMLElement) => {
+    const td = el as HTMLTableCellElement
+    const cols = td.closest('table')?.querySelectorAll(':scope > colgroup > col')
+    const pct = parsePct((cols?.[td.cellIndex] as HTMLElement | undefined)?.style.width)
+    return pct ? [Math.round((pct * COL_BASE) / 100)] : null
+  },
+  renderHTML: () => ({}),
+}
+const SafeCell = TableCell.extend({ addAttributes() { return { ...(this.parent?.() ?? {}), colwidth: colwidthAttr } } })
+const SafeHeader = TableHeader.extend({ addAttributes() { return { ...(this.parent?.() ?? {}), colwidth: colwidthAttr } } })
 
 const editor = useEditor({
   content: props.modelValue,
@@ -164,8 +251,8 @@ const editor = useEditor({
     PaletteColor,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     SafeImage.configure({ allowBase64: false, inline: false, isAllowedSrc: (src: string) => isSafeImageSrc(src, props.imageHosts) }),
-    PlainTable.configure({ resizable: false }),
-    TableRow, TableHeader, TableCell,
+    PlainTable.configure({ resizable: true, cellMinWidth: 60, lastColumnResizable: false }),
+    TableRow, SafeHeader, SafeCell,
     FileHandler.configure({
       allowedMimeTypes: [...IMAGE_TYPES],
       onDrop: (_ed, files, pos) => { void insertFiles(files, pos) },
@@ -195,16 +282,51 @@ const editor = useEditor({
     },
   },
   onUpdate: ({ editor: ed }) => {
+    if (fillColwidths(ed)) return // 채운 트랜잭션이 다시 onUpdate를 부른다 — 그때 내보낸다
     emit('update:modelValue', output(ed))
     checkLength()
   },
 })
+
+/**
+ * 표 열 너비 채우기 — 열 하나를 끌면 그 열에만 colwidth가 생기고 나머지는 비어 있다. 비운 채 내보내면
+ * 화면(빈 열이 남은 폭을 나눠 가짐)과 출력이 달라진다. 화면에서 잰 실제 폭으로 빈 열을 모두 채운다.
+ * 채운 게 있으면 true.
+ */
+function fillColwidths(ed: import('@tiptap/core').Editor): boolean {
+  const tr = ed.state.tr
+  ed.state.doc.descendants((table, tpos) => {
+    if (table.type.name !== 'table') return
+    const row = table.firstChild
+    if (!row) return false
+    const cw: (number | null)[] = []
+    row.forEach((c) => cw.push((c.attrs.colwidth as number[] | null)?.[0] ?? null))
+    if (!cw.some((w) => w) || cw.every((w) => w)) return false
+    const dom = ed.view.nodeDOM(tpos) as HTMLElement | null
+    const cells = dom?.querySelector('tr')?.children
+    if (!cells) return false
+    table.descendants((cell, cpos) => {
+      if (cell.type.name !== 'tableCell' && cell.type.name !== 'tableHeader') return
+      const idx = ed.state.doc.resolve(tpos + 1 + cpos).index()
+      if ((cell.attrs.colwidth as number[] | null)?.[0]) return false
+      const px = Math.round((cells[idx] as HTMLElement | undefined)?.getBoundingClientRect().width ?? 0)
+      if (px > 0) tr.setNodeMarkup(tpos + 1 + cpos, undefined, { ...cell.attrs, colwidth: [px] })
+      return false
+    })
+    return false
+  })
+  if (!tr.docChanged) return false
+  ed.view.dispatch(tr.setMeta('addToHistory', false))
+  return true
+}
 
 /** 내보낼 HTML — 빈 문서는 ''. 앞뒤 빈 문단(이미지 뒤에 붙인 것 등)은 떼어 낸다. 가운데 빈 문단은 사용자가 띄운 줄이라 둔다 */
 function output(ed: Pick<Editor, "isEmpty" | "getHTML">): string {
   if (ed.isEmpty) return ''
   return ed.getHTML()
     .replace(/^(<p><\/p>)+/, '').replace(/(<p><\/p>)+$/, '')
+    // style 끝 세미콜론은 브라우저마다 붙기도 안 붙기도 한다 — 떼어 같은 문자열로 맞춘다
+    .replace(/;\s*"/g, '"')
     // 글자색은 hex로 고정한다 — 브라우저가 style을 rgb()로 바꿔 쓰는 경우가 있어 서버 허용 목록(hex)과 어긋난다
     .replace(/color:\s*rgb\((\d+),\s*(\d+),\s*(\d+)\)/g, (_m, r, g, b) => `color: #${[r, g, b].map((v: string) => Number(v).toString(16).padStart(2, '0')).join('')}`)
 }
@@ -266,6 +388,9 @@ function setLink(url: string): boolean {
   return true
 }
 function unsetLink() { run((c) => c.extendMarkRange('link').unsetLink()); bar.value = null }
+const imageWidth = computed(() => (imageSelected.value ? ((editor.value?.getAttributes('image').width as number | null) ?? 100) : null))
+/** 이미지 폭 — 퍼센트. 100%는 값 없음(원본 폭, 본문보다 넓으면 본문 폭)으로 저장한다 */
+function setImageWidth(w: number) { run((c) => c.updateAttributes('image', { width: w === 100 ? null : w })) }
 function openAlt() { altText.value = (editor.value?.getAttributes('image').alt as string | undefined) ?? ''; bar.value = 'alt' }
 function applyAlt() { run((c) => c.updateAttributes('image', { alt: altText.value.trim() })); bar.value = null }
 
@@ -309,7 +434,7 @@ function roam(e: KeyboardEvent) {
 function initRoving() { items().forEach((el, j) => { el.tabIndex = j === 0 ? 0 : -1 }) }
 watch(toolbar, (el) => { if (el) requestAnimationFrame(initRoving) })
 
-defineExpose({ editor, insertFiles, setLink })
+defineExpose({ editor, insertFiles, setLink, setImageWidth })
 </script>
 
 <template>
@@ -346,6 +471,9 @@ defineExpose({ editor, insertFiles, setLink })
         <Button data-tb text severity="secondary" aria-label="링크 해제" :disabled="!is('link')" @click="unsetLink"><AppIcon name="unlink" :size="16" /></Button>
         <Button data-tb text severity="secondary" aria-label="이미지 넣기" v-tooltip.bottom="`이미지 넣기 — ${IMAGE_LABEL}, ${maxImageMB}MB 이하`" @click="fileInput?.click()"><AppIcon name="image" :size="16" /></Button>
         <Button data-tb text severity="secondary" aria-label="대체 텍스트" :disabled="!imageSelected" :aria-expanded="bar === 'alt'" @click="openAlt"><span class="wse__glyph wse__glyph--sm">ALT</span></Button>
+        <template v-if="imageSelected">
+          <Button v-for="w in IMAGE_WIDTHS" :key="w" data-tb text severity="secondary" class="wse__w" :aria-label="`이미지 폭 ${w}%`" :aria-pressed="imageWidth === w" :class="{ 'is-on': imageWidth === w }" @click="setImageWidth(w)">{{ w }}</Button>
+        </template>
         <Button data-tb text severity="secondary" aria-label="표" aria-haspopup="menu" @click="(e) => tableMenu?.toggle(e)"><AppIcon name="table" :size="16" /></Button>
         <Menu ref="tableMenu" :model="tableItems" popup />
       </div>
@@ -416,8 +544,18 @@ defineExpose({ editor, insertFiles, setLink })
 .wse__body :deep(ol) { list-style: decimal; }
 .wse__body :deep(a) { color: var(--ws-text-link); text-decoration: underline; }
 .wse__body :deep(img) { display: block; max-width: 100%; height: auto; border-radius: var(--ws-radius-sm); }
-.wse__body :deep(img.ProseMirror-selectednode) { outline: 2px solid var(--ws-field-border-focus); outline-offset: 2px; }
-.wse__body :deep(table) { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.wse__body :deep(.wse__img) { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.wse__body :deep(.wse__img[style*='width'] img) { width: 100%; }
+.wse__body :deep(.wse__img.ProseMirror-selectednode) { outline: 2px solid var(--ws-field-border-focus); outline-offset: 2px; }
+/* 끌기 손잡이 — 고른 이미지에만, 읽기 전용에서는 없다 */
+.wse__body :deep(.wse__grip) { display: none; position: absolute; right: -6px; bottom: -6px; width: 14px; height: 14px; border: 2px solid var(--ws-surface); border-radius: 3px; background: var(--ws-field-border-focus); cursor: nwse-resize; touch-action: none; }
+.wse__body :deep(.wse__img.ProseMirror-selectednode .wse__grip) { display: block; }
+.is-readonly .wse__body :deep(.wse__grip) { display: none !important; }
+.wse__body :deep(th), .wse__body :deep(td) { position: relative; }
+.wse__body :deep(.column-resize-handle) { position: absolute; right: -2px; top: 0; bottom: -2px; width: 4px; background: var(--ws-field-border-focus); pointer-events: none; }
+.wse__body :deep(.resize-cursor) { cursor: col-resize; }
+.wse__w { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.wse__body :deep(table) { width: 100% !important; border-collapse: collapse; table-layout: fixed; }
 .wse__body :deep(th), .wse__body :deep(td) { padding: 6px 8px; border: 1px solid var(--ws-border-strong); vertical-align: top; }
 .wse__body :deep(th) { background: var(--ws-surface-head); font-weight: 700; }
 .wse__body :deep(.selectedCell) { background: var(--ws-surface-selected); }

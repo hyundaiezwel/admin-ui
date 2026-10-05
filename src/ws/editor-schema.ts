@@ -26,8 +26,10 @@ export const ALLOWED_ELEMENTS: Record<string, readonly string[]> = {
   ul: [],
   ol: ['start', 'type'],
   li: [],
-  img: ['src', 'alt'],
+  img: ['src', 'alt', 'style'],
   table: [],
+  colgroup: [],
+  col: ['style'],
   thead: [],
   tbody: [],
   tr: [],
@@ -35,8 +37,35 @@ export const ALLOWED_ELEMENTS: Record<string, readonly string[]> = {
   td: ['colspan', 'rowspan', 'style'],
 }
 
-/** style 안에서 허용하는 속성 — 글자색(span)과 정렬(p · h · th · td)뿐 */
-export const ALLOWED_STYLES = ['color', 'text-align'] as const
+/** style 안에서 허용하는 속성 — 요소마다 다르다. 폭은 퍼센트(1~100%)만 */
+export const ELEMENT_STYLES: Record<string, readonly string[]> = {
+  p: ['text-align'], h2: ['text-align'], h3: ['text-align'], h4: ['text-align'], th: ['text-align'], td: ['text-align'],
+  span: ['color'],
+  img: ['width'],
+  col: ['width'],
+}
+/** 어느 요소에든 나올 수 있는 style 속성 전체 */
+export const ALLOWED_STYLES = ['color', 'text-align', 'width'] as const
+
+/** 이미지 폭 버튼 · 끌기 한계 — 퍼센트로 저장한다(대외 화면 폭이 달라도 비율이 유지된다) */
+export const IMAGE_WIDTHS = [25, 50, 75, 100] as const
+export const IMAGE_MIN_PCT = 10
+
+/** 폭 값(`40%` · `40`)을 1~100 정수 퍼센트로. 퍼센트가 아니면(px 등) null */
+export function parsePct(v: string | null | undefined): number | null {
+  if (!v) return null
+  const m = String(v).trim().match(/^(\d+(?:\.\d+)?)\s*%$/)
+  if (!m) return null
+  const n = Math.round(Number(m[1]))
+  return n <= 0 ? null : Math.min(100, n)
+}
+
+/** 이미지 끌기 — 시작 폭(%) · 끈 거리(px) · 본문 폭(px) → 새 폭(%). 10~100 정수 */
+export function dragPct(startPct: number, dx: number, containerPx: number): number {
+  if (containerPx <= 0) return startPct
+  const next = startPct + (dx / containerPx) * 100
+  return Math.max(IMAGE_MIN_PCT, Math.min(100, Math.round(next)))
+}
 
 /** 링크 주소 스킴 — 이 밖은 링크로 만들지 않는다(javascript: · data: · vbscript: …) */
 export const LINK_PROTOCOLS = ['http:', 'https:', 'mailto:'] as const
