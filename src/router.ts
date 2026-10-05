@@ -36,6 +36,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'sp/remaining', component: () => import('./pages/sp/RemainingPage.vue') },
       { path: 'sp/remaining/:id', component: () => import('./pages/sp/RemainingDetailPage.vue') },
       { path: 'sp/daily-report', component: () => import('./pages/sp/DailyReportPage.vue') },
+      { path: 'sp/notice/new', component: () => import('./pages/sp/NoticeEditPage.vue') },
       { path: 'sp/banners', component: () => import('./pages/sp/BannerPage.vue') },
       { path: 'sp/p/:id', component: () => import('./pages/sp/PendingPage.vue') },
     ],

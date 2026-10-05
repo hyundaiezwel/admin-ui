@@ -108,7 +108,7 @@ export const SP_MENU: MenuItem[] = [
   {
     id: 'work', label: '업무 협업', icon: 'inbox',
     children: [
-      { id: 'notice', label: '공지사항', to: p('notice'), asis: ['S-001-01'] },
+      { id: 'notice', label: '공지사항', to: '/sp/notice/new', asis: ['S-001-01'], built: true, note: '등록 화면만 그렸다 — 본문은 리치 텍스트 에디터(WsEditor, Tiptap 3). 목록 · 상세는 설계 카드 단계' },
       { id: 'request', label: '업무요청', to: p('request'), count: 4, asis: ['S-001-02'] },
     ],
   },
