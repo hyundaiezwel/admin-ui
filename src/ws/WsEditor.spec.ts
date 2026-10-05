@@ -158,4 +158,54 @@ describe('WsEditor', () => {
     expect(ed().isEditable).toBe(false)
     w.unmount()
   })
+  it('붙여넣은 이미지는 허용 호스트의 https만 남고, 버린 개수를 알린다', () => {
+    const { ed, w } = setup({ imageHosts: ['files.example.com'] })
+    const html = '<p>a</p><img src="https://files.example.com/ok.png"><img src="https://tracker.example.net/p.gif"><img src="http://files.example.com/x.png"><img src="file:///C:/Temp/clip_image002.png"><img src="/files/rel.png">'
+    // 붙여넣기 경로의 HTML 변환(알림) — jsdom에는 ClipboardEvent가 없어 훅을 직접 부른다
+    ed().view.someProp('transformPastedHTML', (f) => f(html, ed().view))
+    ed().commands.setContent(html)
+    const out = ed().getHTML()
+    expect(out).toContain('https://files.example.com/ok.png')
+    expect(out).toContain('/files/rel.png')
+    expect(out).not.toMatch(/tracker|http:\/\/|file:/)
+    expect(String(w.emitted('invalid')!.at(-1)![0])).toContain('3개')
+    w.unmount()
+  })
+
+  it('붙여넣은 글자색은 가장 가까운 팔레트 색으로, 검정 계열은 기본색으로', () => {
+    const { ed, w } = setup()
+    ed().commands.setContent('<p><span style="color: rgb(255, 0, 0)">빨강</span> <span style="color:#0000ff">파랑</span> <span style="color: navy">남색</span> <span style="color:#111">검정</span></p>')
+    ed().commands.insertContent(' ')
+    const out = w.emitted('update:modelValue')!.at(-1)![0] as string
+    expect(out).toContain('color: #c62828')
+    expect(out).toContain('color: #1565c0')
+    expect(out).not.toMatch(/rgb\(|#0000ff|navy|#111/)
+    expect(out).toContain('검정')
+    expect(out.match(/color:/g)?.length).toBe(3)
+    w.unmount()
+  })
+
+  it('앞뒤 빈 문단은 내보내지 않는다', async () => {
+    const { vm, w } = setup()
+    await vm.insertFiles([png()])
+    await flushPromises()
+    const out = w.emitted('update:modelValue')!.at(-1)![0] as string
+    expect(out.startsWith('<img')).toBe(true)
+    expect(out.endsWith('<p></p>')).toBe(false)
+    w.unmount()
+  })
+})
+
+describe('탭 닫기 확인(leaveGuards)', () => {
+  it('화면이 거절하면 탭을 닫지 않는다', async () => {
+    const { open, close, tabs, leaveGuards } = await import('../app/tabs')
+    const router = { push: vi.fn() } as unknown as import('vue-router').Router
+    open('/sp/notice/new')
+    leaveGuards.set('/sp/notice/new', () => false)
+    close('/sp/notice/new', router)
+    expect(tabs.items.some((t) => t.path === '/sp/notice/new')).toBe(true)
+    leaveGuards.set('/sp/notice/new', () => true)
+    close('/sp/notice/new', router)
+    expect(tabs.items.some((t) => t.path === '/sp/notice/new')).toBe(false)
+  })
 })

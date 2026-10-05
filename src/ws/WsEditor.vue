@@ -28,7 +28,7 @@ import Select from 'primevue/select'
 import Menu from 'primevue/menu'
 import InputText from 'primevue/inputtext'
 import AppIcon from '../app/AppIcon.vue'
-import { IMAGE_LABEL, IMAGE_TYPES, LINK_ATTRS, TEXT_COLORS, isSafeImageSrc, isSafeUrl } from './editor-schema'
+import { IMAGE_LABEL, IMAGE_TYPES, LINK_ATTRS, TEXT_COLORS, isSafeImageSrc, isSafeUrl, nearestTextColor } from './editor-schema'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -42,6 +42,8 @@ const props = withDefaults(defineProps<{
   ariaLabel?: string
   /** 접근성 id 접두어 — 한 화면에 에디터가 둘이면 넘긴다 */
   id?: string
+  /** 이미지를 받을 호스트(업로드 서버). 주면 그 밖의 https 이미지는 붙여넣어도 버린다. 상대 주소 · blob:은 늘 받는다 */
+  imageHosts?: string[]
 }>(), { placeholder: '', maxImageMB: 10, editable: true, invalid: false, ariaLabel: '본문', id: 'ws-editor' })
 
 const emit = defineEmits<{ 'update:modelValue': [html: string]; invalid: [message: string | null] }>()
@@ -90,7 +92,7 @@ async function insertFiles(files: File[], at?: number) {
       const where = placeholderPos(ed, id)
       ed.view.dispatch(ed.state.tr.setMeta(uploadKey, { remove: id }))
       if (where == null) continue // 올리는 사이 자리가 지워졌다
-      if (!isSafeImageSrc(res.url)) { fail('업로드가 돌려준 이미지 주소를 쓸 수 없습니다.'); continue }
+      if (!isSafeImageSrc(res.url, props.imageHosts)) { fail('업로드가 돌려준 이미지 주소를 쓸 수 없습니다.'); continue }
       // 이미지 뒤에 빈 문단을 같이 넣어 커서를 그쪽으로 보낸다 — 이미지가 선택된 채로 남으면 다음 입력(표 넣기 등)이 이미지를 덮어쓴다
       ed.chain().focus().insertContentAt(where, [{ type: 'image', attrs: { src: res.url, alt: res.alt ?? file.name.replace(/\.[^.]+$/, '') } }, { type: 'paragraph' }]).run()
       fail(null)
@@ -110,11 +112,33 @@ const SafeLink = Link.extend({
     return rest as ReturnType<NonNullable<typeof this.parent>>
   },
 })
-/** 이미지 — 기본 확장은 width · height · title도 살린다. 허용 목록(src · alt)만 남긴다 */
-const SafeImage = Image.extend({
+/**
+ * 이미지 — 기본 확장은 width · height · title도 살린다. 허용 목록(src · alt)만 남기고,
+ * **어느 길로 들어오든**(붙여넣기 · 불러오기) 주소를 검사한다 — 업로드 경로만 막으면 붙여넣은 외부 이미지가 남는다
+ */
+const SafeImage = Image.extend<{ isAllowedSrc: (src: string) => boolean } & Record<string, unknown>>({
+  addOptions() { return { ...(this.parent?.() ?? {}), isAllowedSrc: () => false } },
   addAttributes() {
     const { src, alt } = (this.parent?.() ?? {}) as Record<string, unknown>
     return { src, alt } as ReturnType<NonNullable<typeof this.parent>>
+  },
+  parseHTML() {
+    return [{ tag: 'img[src]', getAttrs: (el) => (this.options.isAllowedSrc((el as HTMLElement).getAttribute('src') ?? '') ? null : false) }]
+  },
+})
+/** 글자색 — 붙여넣은 임의 색을 가장 가까운 팔레트 색으로 맞춘다(검정 계열은 기본색) */
+const PaletteColor = Color.extend({
+  addGlobalAttributes() {
+    return [{
+      types: this.options.types,
+      attributes: {
+        color: {
+          default: null,
+          parseHTML: (el: HTMLElement) => nearestTextColor(el.style.color),
+          renderHTML: (a: Record<string, unknown>) => (a.color ? { style: `color: ${a.color}` } : {}),
+        },
+      },
+    }]
   },
 })
 const PlainTable = Table.extend({ renderHTML({ HTMLAttributes }) { return ['table', HTMLAttributes, ['tbody', 0]] } })
@@ -129,16 +153,17 @@ const editor = useEditor({
       link: false,
     }),
     SafeLink.configure({
-      openOnClick: false,
+      // 편집 중에는 눌러도 열지 않고(커서를 놓아야 한다), 읽기 전용(미리보기)에서는 연다
+      openOnClick: !props.editable,
       autolink: true,
       defaultProtocol: 'https',
       HTMLAttributes: { ...LINK_ATTRS },
       isAllowedUri: (url) => isSafeUrl(url),
     }),
     TextStyle,
-    Color,
+    PaletteColor,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    SafeImage.configure({ allowBase64: false, inline: false }),
+    SafeImage.configure({ allowBase64: false, inline: false, isAllowedSrc: (src: string) => isSafeImageSrc(src, props.imageHosts) }),
     PlainTable.configure({ resizable: false }),
     TableRow, TableHeader, TableCell,
     FileHandler.configure({
@@ -161,13 +186,28 @@ const editor = useEditor({
     // 형식 검사에 걸린 파일도 FileHandler가 거르면 알릴 길이 없다 — 넣을 수 없는 파일은 여기서 먼저 알린다
     handleDrop: (_v, e) => rejectFiles((e as DragEvent).dataTransfer?.files),
     handlePaste: (_v, e) => rejectFiles(e.clipboardData?.files),
+    // 붙여넣은 HTML의 이미지 중 받을 수 없는 주소(외부 · file: · http: · data:)를 세어 알린다. 지우는 일은 스키마가 한다
+    transformPastedHTML: (html) => {
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      const bad = [...doc.querySelectorAll('img')].filter((i) => !isSafeImageSrc(i.getAttribute('src') ?? '', props.imageHosts))
+      if (bad.length) fail(`붙여넣은 이미지 ${bad.length}개는 넣지 않았습니다 — 외부 주소 · 임시 파일 이미지는 받지 않습니다. 이미지는 파일로 올려 주세요.`)
+      return html
+    },
   },
   onUpdate: ({ editor: ed }) => {
-    const html = ed.isEmpty ? '' : ed.getHTML()
-    emit('update:modelValue', html)
+    emit('update:modelValue', output(ed))
     checkLength()
   },
 })
+
+/** 내보낼 HTML — 빈 문서는 ''. 앞뒤 빈 문단(이미지 뒤에 붙인 것 등)은 떼어 낸다. 가운데 빈 문단은 사용자가 띄운 줄이라 둔다 */
+function output(ed: Pick<Editor, "isEmpty" | "getHTML">): string {
+  if (ed.isEmpty) return ''
+  return ed.getHTML()
+    .replace(/^(<p><\/p>)+/, '').replace(/(<p><\/p>)+$/, '')
+    // 글자색은 hex로 고정한다 — 브라우저가 style을 rgb()로 바꿔 쓰는 경우가 있어 서버 허용 목록(hex)과 어긋난다
+    .replace(/color:\s*rgb\((\d+),\s*(\d+),\s*(\d+)\)/g, (_m, r, g, b) => `color: #${[r, g, b].map((v: string) => Number(v).toString(16).padStart(2, '0')).join('')}`)
+}
 
 function rejectFiles(list?: FileList | null): boolean {
   const bad = [...(list ?? [])].filter((f) => !(IMAGE_TYPES as readonly string[]).includes(f.type))
@@ -188,7 +228,7 @@ function checkLength() {
 watch(() => props.modelValue, (v) => {
   const ed = editor.value
   if (!ed) return
-  const cur = ed.isEmpty ? '' : ed.getHTML()
+  const cur = output(ed)
   if (v !== cur) { ed.commands.setContent(v || '', { emitUpdate: false }); checkLength() }
 })
 watch(() => props.editable, (v) => editor.value?.setEditable(v))

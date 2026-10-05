@@ -36,7 +36,14 @@ export function open(path: string) {
   state.active = path
 }
 
+/**
+ * 탭을 닫기 전에 물을 화면 — 경로 → "닫아도 되나". 탭을 옮기는 것은 KeepAlive가 화면을 살려 두므로 묻지 않고,
+ * 내용이 실제로 사라지는 **닫기**에서만 묻는다(미저장 이탈 — docs/patterns.md §2).
+ */
+export const leaveGuards = new Map<string, () => boolean>()
+
 export function close(path: string, router: Router) {
+  if (leaveGuards.get(path)?.() === false) return
   const items = list()
   const i = items.findIndex((t) => t.path === path)
   if (i < 0 || items[i].fixed) return
@@ -50,6 +57,7 @@ export function close(path: string, router: Router) {
 }
 
 export function closeOthers(path: string, router: Router) {
+  if (list().some((t) => t.path !== path && !t.fixed && leaveGuards.get(t.path)?.() === false)) return
   state.items = list().filter((t) => t.fixed || t.path === path)
   if (state.active !== path) router.push(path)
 }

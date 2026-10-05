@@ -5,8 +5,8 @@
  * **항목은 요구사항 확정 전 가정이다**(MOCK 표식). 저장 · 업로드는 목업이고(`src/sp/notice.ts`) 서버를 부르지 않는다.
  * 미리보기는 v-html이 아니라 같은 에디터를 읽기 전용으로 그린다 — 화면에 보이는 것과 저장되는 것이 같은 스키마를 지난다.
  */
-import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Dialog from 'primevue/dialog'
@@ -17,7 +17,8 @@ import WsEditor from '../../ws/WsEditor.vue'
 import WsPeriod from '../../ws/WsPeriod.vue'
 import WsUpload from '../../ws/WsUpload.vue'
 import type { Range } from '../../ws/period'
-import { BODY_MAX, NOTICE_TARGETS, TITLE_MAX, mockSaveNotice, mockUploadImage } from '../../sp/notice'
+import { BODY_MAX, IMAGE_HOSTS, NOTICE_TARGETS, TITLE_MAX, mockSaveNotice, mockUploadImage } from '../../sp/notice'
+import { leaveGuards } from '../../app/tabs'
 
 const router = useRouter()
 const form = reactive({
@@ -28,6 +29,17 @@ const form = reactive({
   file: null as File | null,
   body: '',
 })
+/* 미저장 이탈 — 탭 닫기 · 창 닫기에서만 묻는다(탭 이동은 KeepAlive가 내용을 살려 둔다). docs/patterns.md §2 */
+const snapshot = () => JSON.stringify({ ...form, file: form.file?.name ?? null, period: form.period.map((d) => d?.getTime() ?? null) })
+let saved = snapshot()
+const dirty = () => snapshot() !== saved
+const route = useRoute()
+const path = route.path
+const confirmLeave = () => !dirty() || window.confirm('저장하지 않은 공지 내용이 사라집니다. 닫을까요?')
+function onUnload(e: BeforeUnloadEvent) { if (dirty()) { e.preventDefault(); e.returnValue = '' } }
+onMounted(() => { leaveGuards.set(path, confirmLeave); window.addEventListener('beforeunload', onUnload) })
+onBeforeUnmount(() => { leaveGuards.delete(path); window.removeEventListener('beforeunload', onUnload) })
+
 const bodyErr = ref<string | null>(null)
 const fileErr = ref<string | null>(null)
 const touched = ref(false)
@@ -54,7 +66,7 @@ async function save() {
   touched.value = true
   if (Object.keys(errors.value).length || bodyErr.value || fileErr.value) return
   saving.value = true
-  try { done.value = await mockSaveNotice() } finally { saving.value = false }
+  try { done.value = await mockSaveNotice(); saved = snapshot() } finally { saving.value = false }
 }
 const targetLabel = computed(() => NOTICE_TARGETS.find((t) => t.value === form.target)?.label ?? '')
 </script>
@@ -105,7 +117,7 @@ const targetLabel = computed(() => NOTICE_TARGETS.find((t) => t.value === form.t
             <th scope="row" class="req"><span id="nt-body-l">본문</span><span class="ws-sr-only">(필수)</span></th>
             <td class="body">
               <WsEditor
-                id="nt-body" v-model="form.body" :upload-image="mockUploadImage" :max-length="BODY_MAX"
+                id="nt-body" v-model="form.body" :upload-image="mockUploadImage" :image-hosts="IMAGE_HOSTS" :max-length="BODY_MAX"
                 placeholder="공지 본문을 입력하세요. 이미지는 붙여넣거나 끌어 놓아도 됩니다."
                 aria-label="공지 본문" :invalid="touched && !!errors.body" @invalid="bodyErr = $event"
               />
@@ -119,7 +131,7 @@ const targetLabel = computed(() => NOTICE_TARGETS.find((t) => t.value === form.t
     <div class="ws-btnbox">
       <span />
       <div class="ws-btnbox__c">
-        <Button label="취소" severity="secondary" outlined @click="router.back()" />
+        <Button label="취소" severity="secondary" outlined @click="confirmLeave() && router.back()" />
         <Button label="미리보기" severity="secondary" outlined @click="preview = true" />
         <Button label="저장" severity="contrast" :loading="saving" @click="save" />
       </div>
