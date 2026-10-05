@@ -17,12 +17,12 @@ import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import { Color, TextStyle } from '@tiptap/extension-text-style'
 import Image from '@tiptap/extension-image'
-import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
+import { Table, TableCell, TableHeader, TableRow, TableView } from '@tiptap/extension-table'
 import FileHandler from '@tiptap/extension-file-handler'
 import { CharacterCount, Placeholder } from '@tiptap/extensions'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
-import { NodeSelection } from '@tiptap/pm/state'
+import { NodeSelection, TextSelection } from '@tiptap/pm/state'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Menu from 'primevue/menu'
@@ -198,8 +198,25 @@ const PaletteColor = Color.extend({
  * **출력은 퍼센트 colgroup**으로 바꾼다 — `<colgroup><col style="width: N%">`. 칸의 colwidth 속성은 내보내지 않는다.
  * 표 전체 폭은 100% 고정이라 대외 화면 폭이 바뀌어도 넘치지 않는다. 너비를 한 번도 안 바꾼 표는 colgroup 없이 나간다.
  */
+/** 편집 화면의 표 — 기본 TableView는 폭을 열 합계(px)로 직접 정한다. 표 전체 폭(%)을 감싼 틀에 준다 */
+class PctTableView extends TableView {
+  constructor(...args: ConstructorParameters<typeof TableView>) { super(...args); this.applyWidth() }
+  private applyWidth() { const w = this.node.attrs.width as number | null; this.dom.style.width = w ? `${w}%` : '' }
+  override update(node: ConstructorParameters<typeof TableView>[0]) { const ok = super.update(node); if (ok) this.applyWidth(); return ok }
+}
 const COL_BASE = 600 // 퍼센트 → 편집용 px로 되돌릴 때의 기준 폭
 const PlainTable = Table.extend({
+  // 표 전체 폭 — 퍼센트 정수(style="width: N%"). 값이 없으면 100%
+  addAttributes() {
+    return {
+      ...(this.parent?.() ?? {}),
+      width: {
+        default: null,
+        parseHTML: (el: HTMLElement) => { const p = parsePct(el.style.width); return p && p < 100 ? p : null },
+        renderHTML: (a: Record<string, unknown>) => (a.width ? { style: `width: ${a.width}%` } : {}),
+      },
+    }
+  },
   renderHTML({ node, HTMLAttributes }) {
     const widths: (number | null)[] = []
     node.firstChild?.forEach((cell) => {
@@ -251,7 +268,7 @@ const editor = useEditor({
     PaletteColor,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     SafeImage.configure({ allowBase64: false, inline: false, isAllowedSrc: (src: string) => isSafeImageSrc(src, props.imageHosts) }),
-    PlainTable.configure({ resizable: true, cellMinWidth: 60, lastColumnResizable: false }),
+    PlainTable.configure({ resizable: true, cellMinWidth: 60, lastColumnResizable: false, View: PctTableView }),
     TableRow, SafeHeader, SafeCell,
     FileHandler.configure({
       allowedMimeTypes: [...IMAGE_TYPES],
@@ -359,6 +376,21 @@ onBeforeUnmount(() => editor.value?.destroy())
 /* ---------- 툴바 ---------- */
 const is = (name: string, attrs?: Record<string, unknown>) => !!editor.value?.isActive(name, attrs)
 const run = (fn: (c: ReturnType<Editor['chain']>) => ReturnType<Editor['chain']>) => { if (editor.value) fn(editor.value.chain().focus()).run() }
+/** 블록(이미지 등)이 선택돼 있으면 커서를 그 뒤로 옮긴다 — 그대로 표를 넣으면 선택된 이미지를 표로 바꿔 끼운다 */
+function afterSelectedNode() {
+  const ed = editor.value
+  if (!ed || !(ed.state.selection instanceof NodeSelection)) return
+  const end = ed.state.selection.to
+  const $end = ed.state.doc.resolve(end)
+  const tr = ed.state.tr
+  if (!$end.nodeAfter || !$end.nodeAfter.isTextblock) tr.insert(end, ed.schema.nodes.paragraph.create())
+  tr.setSelection(TextSelection.create(tr.doc, end + 1))
+  ed.view.dispatch(tr)
+}
+const TABLE_WIDTHS = [50, 75, 100] as const
+const tableWidth = computed(() => (is('table') ? ((editor.value?.getAttributes('table').width as number | null) ?? 100) : null))
+/** 표 전체 폭 — 퍼센트. 100%는 값 없음 */
+function setTableWidth(w: number) { run((c) => c.updateAttributes('table', { width: w === 100 ? null : w })) }
 
 const BLOCKS = [{ label: '본문', value: 'p' }, { label: '제목 2', value: 'h2' }, { label: '제목 3', value: 'h3' }, { label: '제목 4', value: 'h4' }]
 const block = computed({
@@ -405,7 +437,9 @@ const tableMenu = ref<InstanceType<typeof Menu> | null>(null)
 const tableItems = computed(() => {
   const inTable = is('table')
   return [
-    { label: '표 넣기(3×3, 머리행)', command: () => run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true })) },
+    { label: '표 넣기(3×3, 머리행)', command: () => { afterSelectedNode(); run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true })) } },
+    { separator: true },
+    ...TABLE_WIDTHS.map((w) => ({ label: `표 너비 ${w}%${tableWidth.value === w ? ' ✓' : ''}`, disabled: !inTable, command: () => setTableWidth(w) })),
     { separator: true },
     { label: '위에 행 추가', disabled: !inTable, command: () => run((c) => c.addRowBefore()) },
     { label: '아래에 행 추가', disabled: !inTable, command: () => run((c) => c.addRowAfter()) },
@@ -434,7 +468,7 @@ function roam(e: KeyboardEvent) {
 function initRoving() { items().forEach((el, j) => { el.tabIndex = j === 0 ? 0 : -1 }) }
 watch(toolbar, (el) => { if (el) requestAnimationFrame(initRoving) })
 
-defineExpose({ editor, insertFiles, setLink, setImageWidth })
+defineExpose({ editor, insertFiles, setLink, setImageWidth, setTableWidth, afterSelectedNode })
 </script>
 
 <template>
@@ -555,7 +589,8 @@ defineExpose({ editor, insertFiles, setLink, setImageWidth })
 .wse__body :deep(.column-resize-handle) { position: absolute; right: -2px; top: 0; bottom: -2px; width: 4px; background: var(--ws-field-border-focus); pointer-events: none; }
 .wse__body :deep(.resize-cursor) { cursor: col-resize; }
 .wse__w { font-size: 11.5px; font-variant-numeric: tabular-nums; }
-.wse__body :deep(table) { width: 100% !important; border-collapse: collapse; table-layout: fixed; }
+.wse__body :deep(.tableWrapper table) { width: 100% !important; }
+.wse__body :deep(table) { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .wse__body :deep(th), .wse__body :deep(td) { padding: 6px 8px; border: 1px solid var(--ws-border-strong); vertical-align: top; }
 .wse__body :deep(th) { background: var(--ws-surface-head); font-weight: 700; }
 .wse__body :deep(.selectedCell) { background: var(--ws-surface-selected); }
