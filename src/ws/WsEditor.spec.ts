@@ -3,7 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import PrimeVue from 'primevue/config'
 import Tooltip from 'primevue/tooltip'
 import WsEditor from './WsEditor.vue'
-import { ALLOWED_ELEMENTS, ALLOWED_STYLES } from './editor-schema'
+import { ALLOWED_ELEMENTS, ELEMENT_STYLES, dragPct, parsePct } from './editor-schema'
 
 // jsdom에는 matchMedia가 없다 — PrimeVue Select가 마운트 때 부른다
 window.matchMedia ??= ((q: string) => ({ matches: false, media: q, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false })) as unknown as typeof window.matchMedia
@@ -35,7 +35,8 @@ function assertAllowed(html: string) {
       expect(ALLOWED_ELEMENTS[tag], `${tag}[${a}]`).toContain(a)
       if (a === 'style') {
         for (const decl of el.getAttribute('style')!.split(';').map((d) => d.split(':')[0].trim()).filter(Boolean)) {
-          expect(ALLOWED_STYLES as readonly string[], `style ${decl}`).toContain(decl)
+          expect(ELEMENT_STYLES[tag] ?? [], `${tag} style ${decl}`).toContain(decl)
+          if (decl === 'width') expect(el.getAttribute('style'), `${tag} width는 %`).toMatch(/width:\s*\d+(\.\d+)?%/)
         }
       }
     }
@@ -156,6 +157,134 @@ describe('WsEditor', () => {
     const { w, ed } = setup({ modelValue: '<p>미리보기</p>', editable: false })
     expect(w.find('[role="toolbar"]').exists()).toBe(false)
     expect(ed().isEditable).toBe(false)
+    w.unmount()
+  })
+  it('붙여넣은 이미지는 허용 호스트의 https만 남고, 버린 개수를 알린다', () => {
+    const { ed, w } = setup({ imageHosts: ['files.example.com'] })
+    const html = '<p>a</p><img src="https://files.example.com/ok.png"><img src="https://tracker.example.net/p.gif"><img src="http://files.example.com/x.png"><img src="file:///C:/Temp/clip_image002.png"><img src="/files/rel.png">'
+    // 붙여넣기 경로의 HTML 변환(알림) — jsdom에는 ClipboardEvent가 없어 훅을 직접 부른다
+    ed().view.someProp('transformPastedHTML', (f) => f(html, ed().view))
+    ed().commands.setContent(html)
+    const out = ed().getHTML()
+    expect(out).toContain('https://files.example.com/ok.png')
+    expect(out).toContain('/files/rel.png')
+    expect(out).not.toMatch(/tracker|http:\/\/|file:/)
+    expect(String(w.emitted('invalid')!.at(-1)![0])).toContain('3개')
+    w.unmount()
+  })
+
+  it('붙여넣은 글자색은 가장 가까운 팔레트 색으로, 검정 계열은 기본색으로', () => {
+    const { ed, w } = setup()
+    ed().commands.setContent('<p><span style="color: rgb(255, 0, 0)">빨강</span> <span style="color:#0000ff">파랑</span> <span style="color: navy">남색</span> <span style="color:#111">검정</span></p>')
+    ed().commands.insertContent(' ')
+    const out = w.emitted('update:modelValue')!.at(-1)![0] as string
+    expect(out).toContain('color: #c62828')
+    expect(out).toContain('color: #1565c0')
+    expect(out).not.toMatch(/rgb\(|#0000ff|navy|#111/)
+    expect(out).toContain('검정')
+    expect(out.match(/color:/g)?.length).toBe(3)
+    w.unmount()
+  })
+
+  it('앞뒤 빈 문단은 내보내지 않는다', async () => {
+    const { vm, w } = setup()
+    await vm.insertFiles([png()])
+    await flushPromises()
+    const out = w.emitted('update:modelValue')!.at(-1)![0] as string
+    expect(out.startsWith('<img')).toBe(true)
+    expect(out.endsWith('<p></p>')).toBe(false)
+    w.unmount()
+  })
+})
+
+describe('탭 닫기 확인(leaveGuards)', () => {
+  it('화면이 거절하면 탭을 닫지 않는다', async () => {
+    const { open, close, tabs, leaveGuards } = await import('../app/tabs')
+    const router = { push: vi.fn() } as unknown as import('vue-router').Router
+    open('/sp/notice/new')
+    leaveGuards.set('/sp/notice/new', () => false)
+    close('/sp/notice/new', router)
+    expect(tabs.items.some((t) => t.path === '/sp/notice/new')).toBe(true)
+    leaveGuards.set('/sp/notice/new', () => true)
+    close('/sp/notice/new', router)
+    expect(tabs.items.some((t) => t.path === '/sp/notice/new')).toBe(false)
+  })
+})
+
+describe('크기 조절 — 이미지 · 표', () => {
+  it('I1 이미지 폭 버튼 — 25 · 50 · 75%는 style width, 100%는 값 없음', async () => {
+    const { vm, ed, w } = setup()
+    await vm.insertFiles([png()])
+    await flushPromises()
+    const pos = ed().state.doc.firstChild?.type.name === 'image' ? 0 : 1
+    for (const pct of [25, 50, 75]) {
+      ed().commands.setNodeSelection(pos)
+      ;(vm as unknown as { setImageWidth: (n: number) => void }).setImageWidth(pct)
+      expect(ed().getHTML()).toMatch(new RegExp(`style="width: ${pct}%;?"`))
+    }
+    ed().commands.setNodeSelection(pos)
+    ;(vm as unknown as { setImageWidth: (n: number) => void }).setImageWidth(100)
+    expect(ed().getHTML()).not.toContain('width')
+    w.unmount()
+  })
+
+  it('I2 이미지 폭 불러오기 — % 왕복 유지, px · width 속성은 버리고, 범위 밖은 맞춘다', () => {
+    const { ed, w } = setup()
+    ed().commands.setContent('<img src="https://cdn.example.com/a.png" style="width: 40%"><img src="https://cdn.example.com/b.png" style="width: 320px" width="999"><img src="https://cdn.example.com/c.png" style="width: 150%"><img src="https://cdn.example.com/d.png" style="width: 0%">')
+    const out = ed().getHTML()
+    expect(out).toMatch(/a\.png" style="width: 40%;?"/)
+    expect(out).toMatch(/b\.png"(?! style)/)
+    expect(out).toMatch(/c\.png" style="width: 100%;?"/)
+    expect(out).toMatch(/d\.png"(?! style)/)
+    expect(out).not.toMatch(/320px|999/)
+    expect(parsePct('33.6%')).toBe(34)
+    w.unmount()
+  })
+
+  it('I3 이미지 끌기 계산 — 본문 폭 기준 퍼센트, 10~100 정수', () => {
+    expect(dragPct(50, 100, 800)).toBe(63)
+    expect(dragPct(50, -1000, 800)).toBe(10)
+    expect(dragPct(80, 400, 800)).toBe(100)
+    expect(dragPct(40, 0, 0)).toBe(40)
+  })
+
+  it('T1 표 열 너비 — 출력은 퍼센트 colgroup(합 100), 칸 colwidth는 내보내지 않는다', () => {
+    const { ed, w } = setup()
+    ed().commands.insertTable({ rows: 2, cols: 3, withHeaderRow: true })
+    const widths = [300, 150, 150]
+    const tr = ed().state.tr
+    ed().state.doc.descendants((n, pos) => {
+      if (n.type.name === 'tableHeader' || n.type.name === 'tableCell') {
+        const $p = ed().state.doc.resolve(pos)
+        const idx = $p.index()
+        tr.setNodeMarkup(pos, undefined, { ...n.attrs, colwidth: [widths[idx]] })
+      }
+    })
+    ed().view.dispatch(tr)
+    const out = ed().getHTML()
+    expect(out).toMatch(/<colgroup><col style="width: 50%;?"><col style="width: 25%;?"><col style="width: 25%;?"><\/colgroup>/)
+    expect(out).not.toContain('colwidth')
+    w.unmount()
+  })
+
+  it('T2 표 왕복 — colgroup 퍼센트를 불러와 다시 내보내도 같다', () => {
+    const { ed, w } = setup()
+    const html = '<table><colgroup><col style="width: 60%"><col style="width: 40%"></colgroup><tbody><tr><th><p>구분</p></th><th><p>내용</p></th></tr><tr><td><p>a</p></td><td><p>b</p></td></tr></tbody></table>'
+    ed().commands.setContent(html)
+    const re = /<col style="width: 60%;?"><col style="width: 40%;?">/
+    expect(ed().getHTML()).toMatch(re)
+    ed().commands.setContent(ed().getHTML())
+    expect(ed().getHTML()).toMatch(re)
+    w.unmount()
+  })
+
+  it('S1 폭은 img · col에만 — 다른 요소의 width는 남지 않는다', () => {
+    const { ed, w } = setup()
+    ed().commands.setContent('<p style="width: 50%; text-align: center">가운데</p><h3 style="width:30%">제목</h3><table style="width:50%"><tr><td style="width: 30%">칸</td></tr></table>')
+    const out = ed().getHTML()
+    assertAllowed(out)
+    expect(out).toContain('text-align: center')
+    expect(out).not.toMatch(/<(p|h3|table|td)[^>]*width/)
     w.unmount()
   })
 })

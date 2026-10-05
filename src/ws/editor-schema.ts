@@ -26,8 +26,10 @@ export const ALLOWED_ELEMENTS: Record<string, readonly string[]> = {
   ul: [],
   ol: ['start', 'type'],
   li: [],
-  img: ['src', 'alt'],
+  img: ['src', 'alt', 'style'],
   table: [],
+  colgroup: [],
+  col: ['style'],
   thead: [],
   tbody: [],
   tr: [],
@@ -35,8 +37,35 @@ export const ALLOWED_ELEMENTS: Record<string, readonly string[]> = {
   td: ['colspan', 'rowspan', 'style'],
 }
 
-/** style 안에서 허용하는 속성 — 글자색(span)과 정렬(p · h · th · td)뿐 */
-export const ALLOWED_STYLES = ['color', 'text-align'] as const
+/** style 안에서 허용하는 속성 — 요소마다 다르다. 폭은 퍼센트(1~100%)만 */
+export const ELEMENT_STYLES: Record<string, readonly string[]> = {
+  p: ['text-align'], h2: ['text-align'], h3: ['text-align'], h4: ['text-align'], th: ['text-align'], td: ['text-align'],
+  span: ['color'],
+  img: ['width'],
+  col: ['width'],
+}
+/** 어느 요소에든 나올 수 있는 style 속성 전체 */
+export const ALLOWED_STYLES = ['color', 'text-align', 'width'] as const
+
+/** 이미지 폭 버튼 · 끌기 한계 — 퍼센트로 저장한다(대외 화면 폭이 달라도 비율이 유지된다) */
+export const IMAGE_WIDTHS = [25, 50, 75, 100] as const
+export const IMAGE_MIN_PCT = 10
+
+/** 폭 값(`40%` · `40`)을 1~100 정수 퍼센트로. 퍼센트가 아니면(px 등) null */
+export function parsePct(v: string | null | undefined): number | null {
+  if (!v) return null
+  const m = String(v).trim().match(/^(\d+(?:\.\d+)?)\s*%$/)
+  if (!m) return null
+  const n = Math.round(Number(m[1]))
+  return n <= 0 ? null : Math.min(100, n)
+}
+
+/** 이미지 끌기 — 시작 폭(%) · 끈 거리(px) · 본문 폭(px) → 새 폭(%). 10~100 정수 */
+export function dragPct(startPct: number, dx: number, containerPx: number): number {
+  if (containerPx <= 0) return startPct
+  const next = startPct + (dx / containerPx) * 100
+  return Math.max(IMAGE_MIN_PCT, Math.min(100, Math.round(next)))
+}
 
 /** 링크 주소 스킴 — 이 밖은 링크로 만들지 않는다(javascript: · data: · vbscript: …) */
 export const LINK_PROTOCOLS = ['http:', 'https:', 'mailto:'] as const
@@ -61,15 +90,21 @@ export function isSafeUrl(raw: string): boolean {
   }
 }
 
-/** 이미지 주소 — 업로드가 돌려준 주소만. data: (base64)는 받지 않는다. blob:은 목업 업로드용 */
-export function isSafeImageSrc(raw: string): boolean {
+/**
+ * 이미지 주소 — 업로드가 돌려준 주소만 받는다.
+ * - data:(base64) · file:(Word 임시 파일) · http:(혼합 콘텐츠)는 받지 않는다. blob:은 목업 업로드용
+ * - `hosts`를 주면 그 호스트의 https 주소만 — 붙여넣은 외부 이미지(추적 픽셀 · 남의 서버 핫링크)를 막는다.
+ *   상대 주소(`/files/…`)는 같은 서버라 받는다
+ */
+export function isSafeImageSrc(raw: string, hosts?: readonly string[]): boolean {
   const src = raw.trim()
-  if (!src || /^data:/i.test(src)) return false
-  try {
-    return ['http:', 'https:', 'blob:'].includes(new URL(src, 'https://x.invalid/').protocol)
-  } catch {
-    return false
-  }
+  if (!src) return false
+  let u: URL
+  try { u = new URL(src, 'https://same-origin.invalid/') } catch { return false }
+  if (u.protocol === 'blob:') return true
+  if (u.protocol !== 'https:') return false
+  if (u.hostname === 'same-origin.invalid') return true
+  return !hosts || hosts.includes(u.hostname)
 }
 
 /** 글자색 팔레트 — 흰 바탕 4.5:1 이상. 값은 hex로 저장된다(var()는 서버 sanitizer · 대외 화면이 모른다) */
@@ -81,3 +116,41 @@ export const TEXT_COLORS = [
   { label: '보라', value: '#6a1b9a' },
   { label: '회색', value: '#5f6368' },
 ] as const
+
+/**
+ * 붙여넣은 글자색을 팔레트로 맞춘다 — Word · 웹 문서의 임의 색(`rgb(255,0,0)` · 이름 색)이 그대로 저장되면
+ * 서버 허용 목록과 어긋나고 화면마다 색이 늘어난다. 가장 가까운 팔레트 색으로 바꾸고,
+ * 검정에 가장 가까우면 '기본색'(null)으로 둔다. 값을 못 읽으면 null.
+ */
+export function nearestTextColor(css: string | null | undefined): string | null {
+  if (!css) return null
+  const rgb = parseColor(css)
+  if (!rgb) return null
+  const cands: [string | null, number[]][] = [[null, [34, 34, 34]], ...TEXT_COLORS.map((c) => [c.value, hexRgb(c.value)] as [string, number[]])]
+  let best: string | null = null
+  let d = Infinity
+  for (const [v, c] of cands) {
+    // 사람 눈 가중치(빨강 · 초록 · 파랑 2:4:3) — 단순 RGB 거리보다 "비슷해 보이는" 색을 고른다
+    const dist = 2 * (rgb[0] - c[0]) ** 2 + 4 * (rgb[1] - c[1]) ** 2 + 3 * (rgb[2] - c[2]) ** 2
+    if (dist < d) { d = dist; best = v }
+  }
+  return best
+}
+const hexRgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+function parseColor(css: string): number[] | null {
+  const s = css.trim().toLowerCase()
+  if (/^#[0-9a-f]{6}$/.test(s)) return hexRgb(s)
+  if (/^#[0-9a-f]{3}$/.test(s)) return hexRgb('#' + [...s.slice(1)].map((c) => c + c).join(''))
+  const m = s.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/)
+  if (m) return m.slice(1, 4).map(Number)
+  // 이름 색(red · navy …)은 브라우저에게 맡긴다
+  if (typeof document === 'undefined') return null
+  const el = document.createElement('span')
+  el.style.color = s
+  if (!el.style.color) return null
+  document.body.appendChild(el)
+  const c = getComputedStyle(el).color
+  el.remove()
+  const n = c.match(/(\d+)[\s,]+(\d+)[\s,]+(\d+)/)
+  return n ? n.slice(1, 4).map(Number) : null
+}

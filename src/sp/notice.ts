@@ -14,6 +14,10 @@ export const NOTICE_TARGETS = [
 export const TITLE_MAX = 100
 export const BODY_MAX = 5000
 
+// MOCK(notice): code 이미지 호스트 — 실제는 업로드 서버 호스트(예: 파일 CDN). 비워 두면 외부 https 이미지는 모두 버리고
+// 상대 주소 · 목업 업로드의 blob: 주소만 받는다
+export const IMAGE_HOSTS: string[] = []
+
 /**
  * 본문 이미지 업로드.
  * MOCK(notice): result 이미지 업로드 — 실제는 업로드 API가 준 URL. 지금은 잠깐 기다린 뒤 브라우저 안 임시 주소(blob:)를 돌려준다
