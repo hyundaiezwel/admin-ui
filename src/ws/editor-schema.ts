@@ -62,11 +62,13 @@ export function parsePct(v: string | null | undefined): number | null {
 }
 
 /** 이미지 끌기 — 시작 폭(%) · 끈 거리(px) · 본문 폭(px) → 새 폭(%). 10~100 정수 */
-export function dragPct(startPct: number, dx: number, containerPx: number): number {
+export function dragPct(startPct: number, dx: number, containerPx: number, minPct: number = IMAGE_MIN_PCT): number {
   if (containerPx <= 0) return startPct
   const next = startPct + (dx / containerPx) * 100
-  return Math.max(IMAGE_MIN_PCT, Math.min(100, Math.round(next)))
+  return Math.max(minPct, Math.min(100, Math.round(next)))
 }
+/** 표 모서리 끌기 하한 — 더 좁으면 칸 안 글자가 한 자씩 쌓인다 */
+export const TABLE_MIN_PCT = 30
 
 /** 링크 주소 스킴 — 이 밖은 링크로 만들지 않는다(javascript: · data: · vbscript: …) */
 export const LINK_PROTOCOLS = ['http:', 'https:', 'mailto:'] as const

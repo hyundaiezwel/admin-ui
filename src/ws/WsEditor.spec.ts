@@ -344,3 +344,23 @@ describe('표 전체 너비 · 선택된 이미지 뒤 표 넣기', () => {
     w.unmount()
   })
 })
+
+describe('표 모서리 끌기', () => {
+  it('G1 편집 화면의 표에는 모서리 손잡이가 있다(읽기 전용은 CSS로 숨긴다)', () => {
+    const { ed, w } = setup()
+    ed().commands.insertTable({ rows: 2, cols: 2, withHeaderRow: true })
+    const grip = (ed().view.dom as HTMLElement).querySelector('.tableWrapper .wse__tgrip')
+    expect(grip).not.toBeNull()
+    expect(grip!.getAttribute('contenteditable')).toBe('false')
+    // 손잡이는 출력에 섞이지 않는다
+    expect(ed().getHTML()).not.toContain('wse__tgrip')
+    w.unmount()
+  })
+
+  it('G2 표 끌기 계산 — 30~100% 정수', async () => {
+    const { dragPct: dp, TABLE_MIN_PCT } = await import('./editor-schema')
+    expect(dp(100, -800, 800, TABLE_MIN_PCT)).toBe(30)
+    expect(dp(60, 80, 800, TABLE_MIN_PCT)).toBe(70)
+    expect(dp(90, 400, 800, TABLE_MIN_PCT)).toBe(100)
+  })
+})

@@ -28,7 +28,7 @@ import Select from 'primevue/select'
 import Menu from 'primevue/menu'
 import InputText from 'primevue/inputtext'
 import AppIcon from '../app/AppIcon.vue'
-import { IMAGE_LABEL, IMAGE_TYPES, IMAGE_WIDTHS, LINK_ATTRS, TEXT_COLORS, dragPct, isSafeImageSrc, isSafeUrl, nearestTextColor, parsePct } from './editor-schema'
+import { IMAGE_LABEL, IMAGE_TYPES, IMAGE_WIDTHS, LINK_ATTRS, TABLE_MIN_PCT, TEXT_COLORS, dragPct, isSafeImageSrc, isSafeUrl, nearestTextColor, parsePct } from './editor-schema'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -200,9 +200,49 @@ const PaletteColor = Color.extend({
  */
 /** 편집 화면의 표 — 기본 TableView는 폭을 열 합계(px)로 직접 정한다. 표 전체 폭(%)을 감싼 틀에 준다 */
 class PctTableView extends TableView {
-  constructor(...args: ConstructorParameters<typeof TableView>) { super(...args); this.applyWidth() }
+  grip: HTMLSpanElement
+  constructor(...args: ConstructorParameters<typeof TableView>) {
+    super(...args)
+    const view = args[2]
+    // 오른쪽 아래 모서리 손잡이 — 끌면 표 전체 폭(%)이 바뀐다. 오른쪽 변 전체가 아니라 점 하나라 열 경계 끌기와 겹치지 않는다
+    this.grip = document.createElement('span')
+    this.grip.className = 'wse__tgrip'
+    this.grip.setAttribute('contenteditable', 'false')
+    this.grip.setAttribute('aria-hidden', 'true')
+    this.dom.appendChild(this.grip)
+    if (view) this.grip.addEventListener('pointerdown', (e) => this.drag(e, view))
+    this.applyWidth()
+  }
   private applyWidth() { const w = this.node.attrs.width as number | null; this.dom.style.width = w ? `${w}%` : '' }
+  private drag(e: PointerEvent, view: NonNullable<ConstructorParameters<typeof TableView>[2]>) {
+    if (!view.editable) return
+    e.preventDefault()
+    const doc = view.dom as HTMLElement
+    const cs = getComputedStyle(doc)
+    const inner = doc.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+    const start = (this.node.attrs.width as number | null) ?? Math.round((this.dom.getBoundingClientRect().width / inner) * 100)
+    const x0 = e.clientX
+    let pct = start
+    this.grip.setPointerCapture?.(e.pointerId)
+    const move = (ev: PointerEvent) => { pct = dragPct(start, ev.clientX - x0, inner, TABLE_MIN_PCT); this.dom.style.width = `${pct}%` }
+    const up = () => {
+      this.grip.removeEventListener('pointermove', move)
+      this.grip.removeEventListener('pointerup', up)
+      // 표 노드 위치 — 이 NodeView에는 getPos가 넘어오지 않아 DOM에서 거꾸로 찾는다
+      const $p = view.state.doc.resolve(view.posAtDOM(this.table, 0))
+      for (let d = $p.depth; d > 0; d--) {
+        if ($p.node(d) === this.node) {
+          view.dispatch(view.state.tr.setNodeMarkup($p.before(d), undefined, { ...this.node.attrs, width: pct >= 100 ? null : pct }))
+          break
+        }
+      }
+    }
+    this.grip.addEventListener('pointermove', move)
+    this.grip.addEventListener('pointerup', up)
+  }
   override update(node: ConstructorParameters<typeof TableView>[0]) { const ok = super.update(node); if (ok) this.applyWidth(); return ok }
+  override ignoreMutation(m: Parameters<TableView['ignoreMutation']>[0]) { return m.target === this.grip || m.target === this.dom || super.ignoreMutation(m) }
+  stopEvent(e: Event) { return e.target === this.grip }
 }
 const COL_BASE = 600 // 퍼센트 → 편집용 px로 되돌릴 때의 기준 폭
 const PlainTable = Table.extend({
@@ -590,6 +630,11 @@ defineExpose({ editor, insertFiles, setLink, setImageWidth, setTableWidth, after
 .wse__body :deep(.resize-cursor) { cursor: col-resize; }
 .wse__w { font-size: 11.5px; font-variant-numeric: tabular-nums; }
 .wse__body :deep(.tableWrapper table) { width: 100% !important; }
+.wse__body :deep(.tableWrapper) { position: relative; }
+/* 표 모서리 손잡이 — 표에 마우스를 올리면 보인다. 읽기 전용에서는 없다 */
+.wse__body :deep(.wse__tgrip) { display: none; position: absolute; right: -6px; bottom: -6px; z-index: 2; width: 14px; height: 14px; border: 2px solid var(--ws-surface); border-radius: 3px; background: var(--ws-field-border-focus); cursor: nwse-resize; touch-action: none; }
+.wse__body :deep(.tableWrapper:hover .wse__tgrip) { display: block; }
+.is-readonly .wse__body :deep(.wse__tgrip) { display: none !important; }
 .wse__body :deep(table) { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .wse__body :deep(th), .wse__body :deep(td) { padding: 6px 8px; border: 1px solid var(--ws-border-strong); vertical-align: top; }
 .wse__body :deep(th) { background: var(--ws-surface-head); font-weight: 700; }
