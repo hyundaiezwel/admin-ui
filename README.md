@@ -2,8 +2,8 @@
 
 DS1과 DS2에서 나은 쪽을 골라 합친 어드민 디자인 시스템과 목업.
 
-> 이 저장소(`ez-admin-design-system-2`)가 DS3를 담는다(2026-09-28 교체).
-> 이전 DS2 — WebSquare 값 · 네이티브 컨트롤 · 다크 없음 — 는 태그 [`ds2-native`](https://github.com/hyundaiezwel/ez-admin-design-system-2/tree/ds2-native)에 있다.
+> 이 저장소(`admin-ui`, 2026-10-05에 `ez-admin-design-system-2`에서 이름을 바꿨다)가 DS3를 담는다. 배포 https://hyundaiezwel.github.io/admin-ui/
+> 이전 DS2 — WebSquare 값 · 네이티브 컨트롤 · 다크 없음 — 는 태그 [`ds2-native`](https://github.com/hyundaiezwel/admin-ui/tree/ds2-native)에 있다.
 
 | | 가져온 곳 |
 |---|---|
@@ -22,7 +22,7 @@ npm run build   # 대비 검사(라이트·다크) → 타입 검사 → 빌드
 
 시스템은 **지원 사업 관리** 하나다. 2026-09-28 관리자 센터(DS1 · DS2와 같은 샘플 열 장)를 없애고
 대시보드 · 통계 · 공통코드 · 컴포넌트 카탈로그만 지원 사업으로 옮겼다. 샘플 열 장은 태그
-[`ds3-admin-center`](https://github.com/hyundaiezwel/ez-admin-design-system-2/tree/ds3-admin-center)에 있다.
+[`ds3-admin-center`](https://github.com/hyundaiezwel/admin-ui/tree/ds3-admin-center)에 있다.
 
 **글꼴.** Inter + Noto Sans KR(Google Fonts). Pretendard는 이 둘을 뿌리로 한 합본이라 생김새가 가깝고,
 Artifact 시안은 Google Fonts만 실을 수 있어 앱과 시안이 같은 글꼴로 그려진다. 한글은 unicode-range 조각으로 받는다.
