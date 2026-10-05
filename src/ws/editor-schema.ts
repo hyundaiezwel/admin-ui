@@ -27,7 +27,7 @@ export const ALLOWED_ELEMENTS: Record<string, readonly string[]> = {
   ol: ['start', 'type'],
   li: [],
   img: ['src', 'alt', 'style'],
-  table: [],
+  table: ['style'],
   colgroup: [],
   col: ['style'],
   thead: [],
@@ -42,6 +42,7 @@ export const ELEMENT_STYLES: Record<string, readonly string[]> = {
   p: ['text-align'], h2: ['text-align'], h3: ['text-align'], h4: ['text-align'], th: ['text-align'], td: ['text-align'],
   span: ['color'],
   img: ['width'],
+  table: ['width'],
   col: ['width'],
 }
 /** 어느 요소에든 나올 수 있는 style 속성 전체 */

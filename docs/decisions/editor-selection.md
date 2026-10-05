@@ -65,12 +65,15 @@ ProseMirror 실버전: `prosemirror-view` 1.42.6 · `prosemirror-model` 1.25.12 
 | `ul` · `li` | — |
 | `ol` | `start` · `type` |
 | `img` | `style`(width 1~100%), `src`(https만 — `imageHosts`를 주면 그 호스트만, 상대 주소 · 목업 blob: 허용 / data: · file: · http: 금지), `alt` |
-| `table` · `thead` · `tbody` · `tr` · `colgroup` | — |
+| `table` | `style`(width 1~99% — 표 메뉴의 50 · 75%, 값 없으면 100%) |
+| `thead` · `tbody` · `tr` · `colgroup` | — |
 | `col` | `style`(width %) — 표 열 너비, 합 100 |
 | `th` · `td` | `colspan` · `rowspan` · `style`(text-align) |
 
-- `style`은 요소마다 정해진 것만: `span`→color, `p`·`h*`·`th`·`td`→text-align, `img`·`col`→width(퍼센트만, px 금지).
-- 이미지 폭 100%는 값 없이 저장한다(원본 폭, 본문보다 넓으면 본문 폭). 표 전체 폭은 늘 100%.
+- `style`은 요소마다 정해진 것만: `span`→color, `p`·`h*`·`th`·`td`→text-align, `img`·`col`·`table`→width(퍼센트만, px 금지).
+- 이미지 폭 100%는 값 없이 저장한다(원본 폭, 본문보다 넓으면 본문 폭). 표 전체 폭도 퍼센트(표 메뉴 50 · 75 · 100%), 100%는 값 없음.
+  편집 화면은 Tiptap TableView가 폭을 px로 정해서, 감싼 틀에 퍼센트를 주는 TableView(`PctTableView`)로 바꿨다.
+- 블록(이미지 등)이 선택된 채 표를 넣으면 Tiptap은 선택된 블록을 표로 바꿔 끼운다 — 표를 넣기 전에 커서를 그 뒤로 옮긴다.
 - 빈 본문은 `''`(빈 `<p></p>`를 내보내지 않는다).
 - 글자색은 hex로 저장한다(`#c62828` 등 6색, 흰 바탕 4.5:1 이상). `var(--ws-*)`는 서버 · 대외 화면이 모른다.
   **붙여넣은 색은 가장 가까운 팔레트 색으로 맞춘다**(`nearestTextColor` — 눈 가중 거리). 검정 계열은 기본색(색 없음)이 된다.

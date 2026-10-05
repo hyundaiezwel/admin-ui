@@ -278,13 +278,69 @@ describe('크기 조절 — 이미지 · 표', () => {
     w.unmount()
   })
 
-  it('S1 폭은 img · col에만 — 다른 요소의 width는 남지 않는다', () => {
+  it('S1 폭은 img · col · table에만 — 다른 요소의 width는 남지 않는다', () => {
     const { ed, w } = setup()
     ed().commands.setContent('<p style="width: 50%; text-align: center">가운데</p><h3 style="width:30%">제목</h3><table style="width:50%"><tr><td style="width: 30%">칸</td></tr></table>')
     const out = ed().getHTML()
     assertAllowed(out)
     expect(out).toContain('text-align: center')
-    expect(out).not.toMatch(/<(p|h3|table|td)[^>]*width/)
+    expect(out).not.toMatch(/<(p|h3|td)[^>]*width/)
+    expect(out).toMatch(/<table style="width: 50%;?">/)
+    w.unmount()
+  })
+})
+
+describe('표 전체 너비 · 선택된 이미지 뒤 표 넣기', () => {
+  type More = { setTableWidth: (n: number) => void; afterSelectedNode: () => void }
+
+  it('B1 이미지를 선택한 채 표를 넣어도 이미지가 남고 표는 그 뒤에 온다', async () => {
+    const { vm, ed, w } = setup()
+    await vm.insertFiles([png()])
+    await flushPromises()
+    let imgPos = -1
+    ed().state.doc.descendants((n, pos) => { if (n.type.name === 'image') imgPos = pos })
+    ed().commands.setNodeSelection(imgPos)
+    ;(vm as unknown as More).afterSelectedNode()
+    ed().chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run()
+    const html = ed().getHTML()
+    expect(html).toContain('<img')
+    expect(html.indexOf('<img')).toBeLessThan(html.indexOf('<table'))
+    w.unmount()
+  })
+
+  it('W1 표 너비 50 · 75%는 style width, 100%는 값 없음', () => {
+    const { vm, ed, w } = setup()
+    ed().commands.insertTable({ rows: 2, cols: 2, withHeaderRow: true })
+    for (const pct of [50, 75]) {
+      ;(vm as unknown as More).setTableWidth(pct)
+      expect(ed().getHTML()).toMatch(new RegExp(`<table style="width: ${pct}%;?">`))
+    }
+    ;(vm as unknown as More).setTableWidth(100)
+    expect(ed().getHTML()).toMatch(/<table>/)
+    w.unmount()
+  })
+
+  it('W2 표 너비 왕복 — % 유지, px · 100% 이상은 값 없음', () => {
+    const { ed, w } = setup()
+    const t = (st: string) => `<table style="${st}"><tbody><tr><td><p>a</p></td></tr></tbody></table>`
+    ed().commands.setContent(t('width: 60%'))
+    expect(ed().getHTML()).toMatch(/<table style="width: 60%;?">/)
+    ed().commands.setContent(ed().getHTML())
+    expect(ed().getHTML()).toMatch(/<table style="width: 60%;?">/)
+    ed().commands.setContent(t('width: 500px'))
+    expect(ed().getHTML()).toMatch(/<table>/)
+    ed().commands.setContent(t('width: 120%'))
+    expect(ed().getHTML()).toMatch(/<table>/)
+    w.unmount()
+  })
+
+  it('W3 표 너비와 열 너비를 함께 써도 둘 다 남는다', () => {
+    const { ed, w } = setup()
+    const html = '<table style="width: 75%"><colgroup><col style="width: 30%"><col style="width: 70%"></colgroup><tbody><tr><td><p>a</p></td><td><p>b</p></td></tr></tbody></table>'
+    ed().commands.setContent(html)
+    const out = ed().getHTML()
+    expect(out).toMatch(/<table style="width: 75%;?"><colgroup><col style="width: 30%;?"><col style="width: 70%;?"><\/colgroup>/)
+    assertAllowed(out)
     w.unmount()
   })
 })
