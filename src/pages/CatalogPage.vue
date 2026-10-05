@@ -29,6 +29,7 @@ import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
 import Dialog from 'primevue/dialog'
 import Drawer from 'primevue/drawer'
+import WsEditor from '../ws/WsEditor.vue'
 
 const hex2rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
 const lin = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }
@@ -97,6 +98,15 @@ onMounted(() => requestAnimationFrame(() => {
 }))
 
 const tab = ref('controls')
+
+/* 에디터 — 네 가지 상태 */
+// MOCK(notice): result 카탈로그용 이미지 업로드 — 잠깐 기다린 뒤 브라우저 안 임시 주소를 돌려준다
+const catalogUpload = async (f: File) => { await new Promise((r) => setTimeout(r, 400)); return { url: URL.createObjectURL(f) } }
+// MOCK(notice): text 카탈로그 예시 문구 — 지어낸 값
+const edSample = '<h3>시스템 점검 안내</h3><p>10월 셋째 주 <strong>토요일 02:00~04:00</strong> 동안 접속이 잠시 끊깁니다.</p><ul><li>점검 중에는 신청 · 조회를 할 수 없습니다.</li><li>자세한 일정은 <a href="https://example.com/notice" target="_blank" rel="noopener noreferrer nofollow">안내 페이지</a>를 참고하세요.</li></ul>'
+const ed1 = ref('')
+const ed2 = ref('<p>상한을 20자로 둔 예시입니다. 여기에 더 적으면 넘칩니다.</p>')
+const ed3 = ref('')
 const dlg = ref(false)
 const side = ref(false)
 const combo = ref<string[]>(['웹'])
@@ -295,6 +305,16 @@ const tax = ref('과세')
     <Drawer v-model:visible="side" position="right" header="옆 패널" :style="{ width: '440px' }">
       <p>목록 맥락을 유지해야 하는 상세·편집에 쓴다.</p>
     </Drawer>
+
+    <section class="ws-sec">
+      <div class="ws-tit"><div class="ws-tit__l"><h2 class="ws-tit__h">에디터 — WsEditor (Tiptap 3)</h2></div></div>
+      <div class="eds">
+        <div><p class="ws-desc">기본</p><WsEditor id="cat-ed1" v-model="ed1" :upload-image="catalogUpload" placeholder="내용을 입력하세요" aria-label="기본 에디터" /></div>
+        <div><p class="ws-desc">글자 수 상한(20자)</p><WsEditor id="cat-ed2" v-model="ed2" :upload-image="catalogUpload" :max-length="20" aria-label="글자 수 상한 에디터" /></div>
+        <div><p class="ws-desc">오류</p><WsEditor id="cat-ed3" v-model="ed3" :upload-image="catalogUpload" invalid aria-label="오류 에디터" /><span class="ws-err">본문을 입력해 주세요.</span></div>
+        <div><p class="ws-desc">읽기 전용(미리보기)</p><WsEditor id="cat-ed4" :model-value="edSample" :upload-image="catalogUpload" :editable="false" aria-label="읽기 전용 에디터" /></div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -306,4 +326,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: v
 .ok { color: var(--ws-text-success); font-weight: 600; }
 .bad { color: var(--ws-text-danger); }
 .blocks > * + * { margin-top: var(--ws-gap-region); }
+
+.eds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ws-gap-inter); }
+.eds .ws-desc { margin: 0 0 4px; }
 </style>
