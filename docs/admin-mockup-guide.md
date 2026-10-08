@@ -4,7 +4,7 @@
 판단이 애매하면 세션 "UI/UX 기초 자료 구축"에 확인 요청한다.
 
 ## 0. 정본
-- 저장소 hyundaiezwel/admin-ui, 배포 https://hyundaiezwel.github.io/admin-ui/
+- 저장소 hyundaiezwel/ezwel-admin-ui-ux-guide, 배포 https://hyundaiezwel.github.io/ezwel-admin-ui-ux-guide/
 - 먼저 읽기: [ui-conventions.md](ui-conventions.md)(UI-nn) → [patterns.md](patterns.md) → [accessibility.md](accessibility.md) → [lessons-from-audits.md](lessons-from-audits.md). 상태 규칙 예시 [state-rules.md](state-rules.md)
 - 본보기 화면: `src/pages/sp/*` (목록·상세·`UploadPage`·`BulkCancelPage`·`NoticeEditPage`)
 - 새 컴포넌트 전에 `src/ws/*`, `src/app/*` 검색. `ws-*` 클래스는 예약어 — 화면에서 재정의 금지(UI-30)
